@@ -50,6 +50,11 @@ class SecureHTTPServer(HTTPServer):
         sconn = ssl_wrap_socket(conn, **self.ssl_wrap_args)
         return (sconn, addr)
 
+def serialize(data):
+    return json.dumps(data)
+def deserialize(data):
+    return json.loads(data)
+
 if __name__ == "__main__":
     import sys
     kwargs = {}
