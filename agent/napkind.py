@@ -31,7 +31,7 @@ import napkin
 import napkin.helpers
 import napkin.api
 
-parser = optparse.OptionParser(version=0.1)
+parser = optparse.OptionParser(version="0.1")
 parser.add_option("-d", "--daemonize", action="store_true", dest="daemonize")
 parser.add_option("-m", "--manifest", action="store", dest="manifest")
 parser.add_option("-r", "--report", action="store", dest="report")
