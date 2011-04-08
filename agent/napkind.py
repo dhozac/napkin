@@ -35,7 +35,8 @@ parser = optparse.OptionParser(version=0.1)
 parser.add_option("-d", "--daemonize", action="store_true", dest="daemonize")
 parser.add_option("-m", "--manifest", action="store", dest="manifest")
 parser.add_option("-r", "--report", action="store", dest="report")
-parser.add_option("-l", "--logfile", action="store", dest="logfile", default="/dev/null")
+parser.add_option("-l", "--logfile", action="store", dest="logfile", default=None)
+parser.add_option("-L", "--loglevel", action="store", dest="loglevel", default='INFO')
 parser.add_option("-p", "--pidfile", action="store", dest="pidfile")
 parser.add_option("-b", "--bind-address", action="store", dest="bind_addr", default="")
 parser.add_option("-P", "--bind-port", action="store", dest="bind_port", type="int", default=12200)
@@ -45,12 +46,15 @@ parser.add_option("-k", "--key", action="store", dest="key")
 parser.add_option("-a", "--ca-certificate", action="store", dest="cacert")
 (options, args) = parser.parse_args(sys.argv[1:])
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(filename=options.logfile, level=getattr(logging, options.loglevel))
 logging.debug('hello, this is napkind')
 
 if options.daemonize:
-    stdout_log = open(options.logfile, 'a+', 0)
-    stderr_log = open(options.logfile, 'a+', 0)
+    logfile = options.logfile
+    if logfile is None:
+        logfile = "/dev/null"
+    stdout_log = open(logfile, 'a+', 0)
+    stderr_log = open(logfile, 'a+', 0)
     dev_null = open('/dev/null', 'r+')
 
     os.dup2(stderr_log.fileno(), 2)
@@ -63,7 +67,7 @@ if options.daemonize:
     pid = os.fork()
     if pid > 0:
         os._exit(0)
-    os.umask(octal('0022'))
+    os.umask(napkin.helpers.octal('0022'))
     os.setsid()
     os.chdir("/")
     pid = os.fork()
