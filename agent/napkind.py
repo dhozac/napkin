@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python -tt
 # vim:set ts=4 sw=4 expandtab:
 # 
 # napkin - napkind runs on clients and monitors resources and does things when told
