@@ -93,6 +93,7 @@ class manifest:
         self.resources = {}
         self.order = []
         self.report_data = {}
+        self.report_data["exceptions"] = []
         self.monitors = []
         self.wlock = threading.RLock()
         self.rlock = threading.RLock()
@@ -211,6 +212,7 @@ class manifest:
         self.monitors.append(d)
     def monitor(self):
         self.report_data.clear()
+        self.report_data["exceptions"] = []
         if len(self.monitors) == 0:
             return
         self.get_rlock()
@@ -230,9 +232,13 @@ class manifest:
                 e = sys.exc_info()[1]
                 logging.warning("%s: %s" % (d['key'], e))
                 i.notify_subscribers(t, e)
+                self.report_exception(t, e)
                 val = e.val
             except:
                 logging.exception("unknown exception from %s" % d['key'])
+                t = sys.exc_info()[0]
+                e = sys.exc_info()[1]
+                self.report_exception(t, e, True)
                 continue
             if val is not None:
                 self.report(i, val)
@@ -248,10 +254,13 @@ class manifest:
         return time_left
     def report(self, obj, val):
         self.report_data[(obj.__class__.__name__, obj.name)] = val
+    def report_exception(self, t, e, critical=False):
+        self.report_data["exceptions"].append([self.name, t.__class__.__name__, repr(e), critical])
     def get_report(self):
         return self.report_data
     def clear_monitor(self):
         self.report_data.clear()
+        self.report_data["exceptions"] = []
         self.monitors = []
 
     def read(self, filename):
