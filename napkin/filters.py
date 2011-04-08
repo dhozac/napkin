@@ -19,7 +19,18 @@
 import re
 import logging
 
-class f_apache:
+class f_base:
+    def __init__(self):
+        pass
+    def __str__(self):
+        return self.__repr__()
+    def __repr__(self):
+        ret = self.__class__.__name__ + "("
+        ret += repr(self.kwargs)
+        ret += ")"
+        return ret
+
+class f_apache(f_base):
     def __init__(self, *args, **kwargs):
         if len(args) > 0 and isinstance(args[0], dict):
             self.kwargs = args[0]
