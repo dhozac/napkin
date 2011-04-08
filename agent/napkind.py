@@ -105,7 +105,7 @@ def send_report(report_data):
     (fd, tmpname) = tempfile.mkstemp()
     os.write(fd, str(report_data).encode("utf-8"))
     os.close(fd)
-    cmd = ["curl", "-s", "-S", "-L", "-f", "--data-urlencode", "report@%s" % tmpname]
+    cmd = ["curl", "-s", "-S", "-L", "-f", "--data-binary", "@%s" % tmpname, "-H", "Content-Type: application/x-napkin-report"]
     if options.certificate:
         cmd += ["--cert", options.certificate]
         if options.key:
@@ -140,7 +140,7 @@ monitor.start()
 class AgentRequestHandler(napkin.api.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     def do_GET(self):
-        self.wfile.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 3\r\n\r\n1\r\n")
+        self.wfile.write("HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 3\r\n\r\n1\r\n")
 
 server = napkin.api.SecureHTTPServer((options.bind_addr, options.bind_port),
             AgentRequestHandler,
