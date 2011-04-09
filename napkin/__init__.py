@@ -21,9 +21,7 @@ import sys
 import time
 import logging
 import threading
-import napkin.helpers
-
-helpers = napkin.helpers
+import napkin.helpers as helpers
 
 class resource_ref:
     """A light-weight reference to a resource"""
@@ -86,10 +84,10 @@ class MonitorAboveMax(MonitorException):
     def __str__(self):
         return self.__repr__()
 
+threadlocals = threading.local()
+
 class manifest:
-    instance = None
     def __init__(self):
-        manifest.instance = self
         self.resources = {}
         self.order = []
         self.report_data = {}
@@ -264,9 +262,19 @@ class manifest:
         self.monitors = []
 
     def read(self, filename):
+        import napkin.providers
+        import napkin.filters
         self.get_wlock()
         self.clear()
-        napkin.helpers.execfile(filename)
+        d = {}
+        for i in dir(napkin.providers):
+            if i.startswith("t_") or i.startswith("m_"):
+                d[i] = getattr(napkin.providers, i)
+        for i in dir(napkin.filters):
+            if i.startswith("f_"):
+                d[i] = getattr(napkin.filters, i)
+        threadlocals.manifest = self
+        helpers.execfile(filename, d, d)
         self.unlock()
 
     def get_rlock(self):
@@ -316,7 +324,7 @@ class resource:
         self.before = []
         self.after = []
         self.subscribed = []
-        self.manifest = manifest.instance
+        self.manifest = threadlocals.manifest
         self.success = False
         if len(kwargs) == 0 and len(args) == 1:
             # Resource reference
