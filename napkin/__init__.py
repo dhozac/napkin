@@ -270,17 +270,12 @@ class manifest:
         self.unlock()
 
     def get_rlock(self):
-        logging.debug("Thread %s: acquiring read lock" % threading.current_thread().ident)
         self.rlock.acquire()
-        logging.debug("Thread %s: acquired!" % threading.current_thread().ident)
     def get_wlock(self):
-        logging.debug("Thread %s: acquiring write lock" % threading.current_thread().ident)
         self.wlock.acquire()
         self.rlock.acquire()
         self.has_wlock = True
-        logging.debug("Thread %s: acquired!" % threading.current_thread().ident)
     def unlock(self):
-        logging.debug("Thread %s: releasing locks" % threading.current_thread().ident)
         if self.has_wlock:
             self.has_wlock = False
             self.wlock.release()
