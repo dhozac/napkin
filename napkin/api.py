@@ -52,6 +52,7 @@ class SecureHTTPServer(HTTPServer):
     def get_request(self):
         conn, addr = self.socket.accept()
         sconn = ssl_wrap_socket(conn, **self.ssl_wrap_args)
+        sconn.peercert = sconn.getpeercert()
         return (sconn, addr)
 
 def serialize(data):
