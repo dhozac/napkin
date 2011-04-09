@@ -17,8 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import logging
 import sys
+import logging
+import logging.config
 import optparse
 import socket
 import tempfile
@@ -35,8 +36,8 @@ parser = optparse.OptionParser(version="0.1")
 parser.add_option("-d", "--daemonize", action="store_true", dest="daemonize")
 parser.add_option("-m", "--manifest", action="store", dest="manifest")
 parser.add_option("-r", "--report", action="store", dest="report")
-parser.add_option("-l", "--logfile", action="store", dest="logfile", default=None)
-parser.add_option("-L", "--loglevel", action="store", dest="loglevel", default='INFO')
+parser.add_option("-l", "--logconfig", action="store", dest="logconfig", default='/etc/napkin/logging.conf')
+parser.add_option("-L", "--logfile", action="store", dest="logfile", default='/var/log/napkind')
 parser.add_option("-p", "--pidfile", action="store", dest="pidfile")
 parser.add_option("-b", "--bind-address", action="store", dest="bind_addr", default="")
 parser.add_option("-P", "--bind-port", action="store", dest="bind_port", type="int", default=12200)
@@ -46,7 +47,7 @@ parser.add_option("-k", "--key", action="store", dest="key")
 parser.add_option("-a", "--ca-certificate", action="store", dest="cacert")
 (options, args) = parser.parse_args(sys.argv[1:])
 
-logging.basicConfig(filename=options.logfile, level=getattr(logging, options.loglevel))
+logging.config.fileConfig(options.logconfig)
 logging.debug('hello, this is napkind')
 
 if options.daemonize:
