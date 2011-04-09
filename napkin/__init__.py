@@ -232,7 +232,7 @@ class manifest:
                 e = sys.exc_info()[1]
                 logging.warning("%s: %s" % (d['key'], e))
                 i.notify_subscribers(t, e)
-                self.report_exception(t, e)
+                self.report_exception(i, t, e)
                 val = e.val
             except:
                 logging.exception("unknown exception from %s" % d['key'])
@@ -254,13 +254,13 @@ class manifest:
         return time_left
     def report(self, obj, val):
         self.report_data[(obj.__class__.__name__, obj.name)] = val
-    def report_exception(self, t, e, critical=False):
-        self.alerts.append([self.name, t.__class__.__name__, repr(e), critical])
+    def report_exception(self, obj, t, e, critical=False):
+        self.alerts.append([obj.name, t.__class__.__name__, repr(e), critical])
     def get_report(self):
-        return self.report_data
+        return [self.report_data, self.alerts]
     def clear_monitor(self):
         self.report_data.clear()
-        self.alerts.clear()
+        self.alerts = []
         self.monitors = []
 
     def read(self, filename):
