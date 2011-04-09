@@ -35,7 +35,11 @@ except:
         if cert_reqs == 1:
             ctx.set_verify(OpenSSL.SSL.SSL_VERIFY_PEER)
         return OpenSSL.SSL.Connection(ctx, conn)
-import json
+try:
+    import json
+except:
+    import simplejson
+    json = simplejson
 
 class SecureHTTPServer(HTTPServer):
     def __init__(self, *args, **kwargs):
@@ -51,9 +55,15 @@ class SecureHTTPServer(HTTPServer):
         return (sconn, addr)
 
 def serialize(data):
-    return json.dumps(data)
-def deserialize(data):
-    return json.loads(data)
+    if hasattr(data, 'read'):
+        return json.dump(data)
+    else:
+        return json.dumps(data)
+def deserialize(data, length=None):
+    if hasattr(data, 'read'):
+        return json.load(data)
+    else:
+        return json.loads(data)
 
 if __name__ == "__main__":
     import sys
