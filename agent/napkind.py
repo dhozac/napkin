@@ -82,10 +82,12 @@ if options.daemonize:
 
 def do_run(manifest, options, conn, addr):
     (fd, tmpname) = tempfile.mkstemp('', '.napkin.conf.', options.statedir)
+    ret = False
     try:
         napkin.helpers.file_fetcher(options.manifest, lambda x: os.write(fd, x.encode('utf-8')))
         os.close(fd)
         os.rename(tmpname, os.path.join(options.statedir, "napkin.conf"))
+        ret = True
     except:
         logging.exception("failed to download napkin.conf")
         os.close(fd)
@@ -95,7 +97,7 @@ def do_run(manifest, options, conn, addr):
     manifest.read(os.path.join(options.statedir, "napkin.conf"))
     manifest.run()
     logging.debug("executed manifest =\n%s" % manifest)
-    return True
+    return ret
 
 def send_report(report_data):
     if not options.report:
@@ -140,7 +142,29 @@ monitor.start()
 class AgentRequestHandler(napkin.api.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     def do_GET(self):
-        self.wfile.write("HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 3\r\n\r\n1\r\n")
+        hostname = None
+        for i in self.request.peercert['subject']:
+            if i[0][0] == 'commonName':
+                hostname = i[0][1]
+        if hostname != config['master']:
+            logging.warning("Request for %s from %s not from configured master %s" % (self.path, hostname, config['master']))
+            self.send_error(401)
+            self.wfile.write("Request not from configured master!")
+            return
+        if self.path == "/run":
+            result = do_run(manifest, options, None, None)
+        else:
+            self.send_error(404)
+            self.wfile.write("Unknown request %s" % self.path)
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain")
+        self.send_header("Content-Length", "3")
+        self.end_headers()
+        if result:
+            self.wfile.write("1\r\n")
+        else:
+            self.wfile.write("0\r\n")
 
 server = napkin.api.SecureHTTPServer((options.bind_addr, options.bind_port),
             AgentRequestHandler,
