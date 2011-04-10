@@ -34,18 +34,41 @@ import napkin.api
 
 parser = optparse.OptionParser(version="0.1")
 parser.add_option("-d", "--daemonize", action="store_true", dest="daemonize")
+parser.add_option("-C", "--config", action="store", dest="conffile", default="/etc/napkin/napkind.conf")
 parser.add_option("-m", "--manifest", action="store", dest="manifest")
 parser.add_option("-r", "--report", action="store", dest="report")
-parser.add_option("-l", "--logconfig", action="store", dest="logconfig", default='/etc/napkin/logging.conf')
-parser.add_option("-L", "--logfile", action="store", dest="logfile", default='/var/log/napkind')
+parser.add_option("-l", "--logconfig", action="store", dest="logconfig")
+parser.add_option("-L", "--logfile", action="store", dest="logfile")
 parser.add_option("-p", "--pidfile", action="store", dest="pidfile")
-parser.add_option("-b", "--bind-address", action="store", dest="bind_addr", default="")
-parser.add_option("-P", "--bind-port", action="store", dest="bind_port", type="int", default=12200)
-parser.add_option("-S", "--state-dir", action="store", dest="statedir")
-parser.add_option("-c", "--certificate", action="store", dest="certificate")
+parser.add_option("-b", "--bind-address", action="store", dest="bind_addr")
+parser.add_option("-P", "--bind-port", action="store", dest="bind_port", type="int")
+parser.add_option("-S", "--statedir", action="store", dest="statedir")
+parser.add_option("-c", "--cert", action="store", dest="cert")
 parser.add_option("-k", "--key", action="store", dest="key")
-parser.add_option("-a", "--ca-certificate", action="store", dest="cacert")
+parser.add_option("-a", "--cacert", action="store", dest="cacert")
+parser.add_option("-M", "--master", action="store", dest="master")
 (options, args) = parser.parse_args(sys.argv[1:])
+
+if options.conffile and os.path.exists(options.conffile):
+    d = {}
+    napkin.helpers.execfile(options.conffile, d, d)
+    for i in d:
+        if getattr(options, i) is None:
+            setattr(options, i, d[i])
+    del d
+
+if not options.logconfig:
+    options.logconfig = "/etc/napkin/logging.conf"
+if not options.logfile:
+    options.logfile = "/var/log/napkind"
+if not options.pidfile:
+    options.pidfile = "/var/run/napkind.pid"
+if not options.bind_addr:
+    options.bind_addr = ""
+if not options.bind_port:
+    options.bind_port = 12200
+if not options.statedir:
+    options.statedir = "/var/lib/napkin"
 
 logging.config.fileConfig(options.logconfig)
 logging.debug('hello, this is napkind')
@@ -81,8 +104,8 @@ def send_report(report_data):
     os.write(fd, str(report_data).encode("utf-8"))
     os.close(fd)
     cmd = ["curl", "-s", "-S", "-L", "-f", "--data-binary", "@%s" % tmpname, "-H", "Content-Type: application/x-napkin-report"]
-    if options.certificate:
-        cmd += ["--cert", options.certificate]
+    if options.cert:
+        cmd += ["--cert", options.cert]
         if options.key:
             cmd += ["--key", options.key]
     if options.cacert:
@@ -119,7 +142,7 @@ class AgentRequestHandler(napkin.api.BaseHTTPRequestHandler):
         for i in self.request.peercert['subject']:
             if i[0][0] == 'commonName':
                 hostname = i[0][1]
-        if hostname != config['master']:
+        if hostname != options.master:
             logging.warning("Request for %s from %s not from configured master %s" % (self.path, hostname, config['master']))
             self.send_error(401)
             self.wfile.write("Request not from configured master!")
@@ -127,6 +150,7 @@ class AgentRequestHandler(napkin.api.BaseHTTPRequestHandler):
         if self.path == "/run":
             result = do_run(manifest, options, None, None)
         else:
+            logging.warning("Unknown request for %s" % self.path)
             self.send_error(404)
             self.wfile.write("Unknown request %s" % self.path)
             return
@@ -143,7 +167,7 @@ server = napkin.api.SecureHTTPServer((options.bind_addr, options.bind_port),
             AgentRequestHandler,
                 keyfile=options.key,
                 ca_certs=options.cacert,
-                certfile=options.certificate,
+                certfile=options.cert,
                 cert_reqs=napkin.api.CERT_REQ)
 
 try:
