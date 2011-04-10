@@ -4,8 +4,6 @@
 from distutils.core import setup
 from distutils.cmd import Command
 from distutils.command.sdist import sdist
-from distutils.file_util import copy_file
-from distutils.dir_util import mkpath
 from distutils.command.install_scripts import install_scripts
 import os
 import sys
@@ -70,14 +68,14 @@ class bdist_rpmspec(Command):
 
 class my_install_scripts(install_scripts):
     def run(self):
-        if not self.dry_run:
-            mkpath(self.install_dir)
+        self.mkpath(self.install_dir)
         for i in os.listdir(self.build_dir):
             srcname = os.path.join(self.build_dir, i)
             dstname = os.path.join(self.install_dir, i)
             if dstname.endswith(".py"):
                 dstname = dstname[:-3]
-            copy_file(srcname, dstname, 1, 1, 0, dry_run=self.dry_run)
+            self.copy_file(srcname, dstname)
+            self.outfiles.append(dstname)
 
 # FIXME: there has to be a better way to do this.
 if sys.argv[1] == "install":
