@@ -69,6 +69,10 @@ if not options.bind_port:
     options.bind_port = 12200
 if not options.statedir:
     options.statedir = "/var/lib/napkin"
+if not options.manifest and options.master:
+    options.manifest = "https://%s:12201/napkin/manifest" % options.master
+if not options.report and options.master:
+    options.report = "https://%s:12201/napkin/report" % options.master
 
 logging.config.fileConfig(options.logconfig)
 logging.debug('hello, this is napkind')

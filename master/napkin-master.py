@@ -84,9 +84,9 @@ if 'GATEWAY_INTERFACE' in os.environ:
         (header, value) = line.split(":", 1)
         resp.headers[header.strip().lower()] = value.strip()
     hostname = os.environ['SSL_CLIENT_S_DN_CN']
-    if sys.argv[0] == "report.cgi":
+    if os.environ['SCRIPT_NAME'].endswith("/report"):
         process_report(hostname, sys.stdin, sys.stdout, resp)
-    elif sys.argv[0] == "manifest.cgi":
+    elif os.environ['SCRIPT_NAME'].endswith("/manifest"):
         create_manifest(hostname, sys.stdin, sys.stdout, resp)
     else:
         resp.send_error(500, "Invalid request filename")
@@ -124,7 +124,7 @@ else:
                 ReportRequestHandler,
                     keyfile=config['key'],
                     ca_certs=config['cacert'],
-                    certfile=config['certificate'],
+                    certfile=config['cert'],
                     cert_reqs=napkin.api.CERT_REQ)
 
     try:
