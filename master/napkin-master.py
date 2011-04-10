@@ -115,7 +115,7 @@ if 'GATEWAY_INTERFACE' in os.environ:
 else:
     if config['daemonize']:
         napkin.helpers.daemonize(config['logfile'], config['pidfile'])
-    class ReportRequestHandler(napkin.api.BaseHTTPRequestHandler):
+    class MasterRequestHandler(napkin.api.BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.0"
         def send_error(self, status, msg):
             self.send_response(400)
@@ -147,7 +147,7 @@ else:
             pass
 
     server = napkin.api.SecureHTTPServer(('', 12201),
-                ReportRequestHandler,
+                MasterRequestHandler,
                     keyfile=config['key'],
                     ca_certs=config['cacert'],
                     certfile=config['cert'],
