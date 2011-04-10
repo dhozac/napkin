@@ -21,6 +21,7 @@ import sys
 import time
 import logging
 import optparse
+import shutil
 import napkin.helpers
 import napkin.api
 
@@ -54,7 +55,26 @@ def create_manifest(hostname, rfp, wfp, resp):
         return
     resp.send_response(200)
     resp.end_headers()
-    wfp.write("1\r\n")
+    manifest = napkin.manifest()
+    manifest.read(os.path.join(config['manifestdir'], hostname))
+    wfp.write(repr(manifest))
+
+def send_file(hostname, path, rfp, wfp, resp):
+    if hostname is None:
+        resp.send_error(400, "No common name found in certificate!\r\n")
+        return
+    filename = config['filesdir'] + path[path.index('/files/') + 6:]
+    if not os.path.exists(filename) or not os.path.isfile(filename):
+        resp.send_error(404, "No such file could be found!\r\n")
+        return
+    st = os.stat(filename)
+    resp.send_response(200)
+    resp.send_header("Content-Length", "%d" % (st.st_size))
+    resp.send_header("Content-Type", "application/x-napkin-file")
+    resp.end_headers()
+    f = open(filename, 'rb')
+    shutil.copyfileobj(f, wfp)
+    f.close()
 
 if 'GATEWAY_INTERFACE' in os.environ:
     class Wrapper:
@@ -88,6 +108,8 @@ if 'GATEWAY_INTERFACE' in os.environ:
         process_report(hostname, sys.stdin, sys.stdout, resp)
     elif os.environ['SCRIPT_NAME'].endswith("/manifest"):
         create_manifest(hostname, sys.stdin, sys.stdout, resp)
+    elif '/files/' in os.environ['SCRIPT_NAME']:
+        send_file(hostname, os.environ['SCRIPT_NAME'], sys.stdin, sys.stdout, resp)
     else:
         resp.send_error(500, "Invalid request filename")
 else:
@@ -104,8 +126,12 @@ else:
             for i in self.request.peercert['subject']:
                 if i[0][0] == 'commonName':
                     hostname = i[0][1]
+            if self.path.startswith("/napkin"):
+                self.path = self.path[7:]
             if self.path == "/manifest":
                 create_manifest(hostname, self.rfile, self.wfile, self)
+            elif self.path.startswith("/files/"):
+                send_file(hostname, self.path, self.rfile, self.wfile, self)
             else:
                 self.send_error(404)
         def do_POST(self):
