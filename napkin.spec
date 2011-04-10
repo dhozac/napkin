@@ -1,9 +1,9 @@
 %if ! (0%{?fedora} > 12 || 0%{?rhel} > 5)
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 %global with_python3 0
 %else
 %global __python %{__python3}
+%global python_sitelib %python3_sitelib
 %global with_python3 1
 %endif
 
@@ -15,7 +15,7 @@ Summary:	Configuration management and monitoring system
 Group:		System Environment/Daemons
 License:	GPLv3
 URL:		http://github.com/dhozac/napkin
-Source0:	napkin-%{version}.tar.gz
+Source0:	napkin-%{version}.tar.bz2
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildArch:	noarch
@@ -50,12 +50,15 @@ Configures a napkin node.
 
 
 %build
-%{__python} setup.py build
 
 
 %install
 rm -rf "%{buildroot}"
-%{__python} setup.py install --skip-build --root "%{buildroot}"
+make install DESTDIR="%{buildroot}" \
+	sbindir="%{_sbindir}" \
+	initddir="%{_initrddir}" \
+	pythondir="%{python_sitelib}" \
+	sysconfdir="%{_sysconfdir}"
 
 
 %clean
