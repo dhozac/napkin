@@ -140,6 +140,7 @@ monitor = threading.Thread(target=do_monitoring)
 monitor.start()
 
 class AgentRequestHandler(napkin.api.BaseHTTPRequestHandler):
+    server_version = "napkin/0.1"
     protocol_version = "HTTP/1.0"
     def do_GET(self):
         hostname = None

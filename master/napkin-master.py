@@ -117,6 +117,7 @@ else:
         napkin.helpers.daemonize(config['logfile'], config['pidfile'])
     class MasterRequestHandler(napkin.api.BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.0"
+        server_version = "napkin/0.1"
         def send_error(self, status, msg):
             self.send_response(400)
             self.end_headers()
