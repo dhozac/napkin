@@ -30,8 +30,11 @@ install:
 	cp -p master/napkin-master.init $(DESTDIR)$(initddir)/napkin-master
 
 dist: napkin-$(VERSION).tar.bz2
-napkin-$(VERSION).tar.bz2:
+napkin-$(VERSION).tar.bz2: $(shell git ls-files)
 	git archive --format=tar --prefix=napkin-$(VERSION)/ HEAD | bzip2 -9 > napkin-$(VERSION).tar.bz2
 
 rpm: napkin-$(VERSION).tar.bz2
 	rpmbuild -tb $<
+
+clean:
+	rm -f napkin-$(VERSION).tar.bz2
