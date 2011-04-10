@@ -149,5 +149,5 @@ server = napkin.api.SecureHTTPServer((options.bind_addr, options.bind_port),
 try:
     server.serve_forever()
 finally:
-    manifest.clear_monitor()
+    manifest.stop_monitor()
     monitor.join()

@@ -209,8 +209,7 @@ class manifest:
                 return
         self.monitors.append(d)
     def monitor(self):
-        self.report_data.clear()
-        self.alerts = []
+        self.clear_monitor()
         if len(self.monitors) == 0:
             return
         self.get_rlock()
@@ -259,6 +258,8 @@ class manifest:
     def clear_monitor(self):
         self.report_data.clear()
         self.alerts = []
+    def stop_monitor(self):
+        self.clear_monitor()
         self.monitors = []
 
     def read(self, filename):
