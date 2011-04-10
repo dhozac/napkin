@@ -39,9 +39,15 @@ def file_fetcher(url, writer):
             if not buf:
                 break
             writer(buf)
+        stderr = ""
+        while True:
+            buf = p.stderr.readline(4096)
+            if not buf:
+                break
+            stderr += buf
         ret = p.wait()
         if ret != 0:
-            raise Exception("unable to execute curl: %d" % ret)
+            raise Exception("unable to execute curl: %d: %s" % (ret, stderr))
     else:
         raise TypeError("source %s uses unknown scheme" % url)
 
