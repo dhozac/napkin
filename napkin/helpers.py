@@ -88,6 +88,36 @@ def files_differ(src, dst):
             return True
     return files_cmp(src, src_st, dst, dst_st)
 
+def daemonize(logfile=None, pidfile=None):
+    if logfile is None:
+        logfile = "/dev/null"
+    stdout_log = open(logfile, 'a+', 0)
+    stderr_log = open(logfile, 'a+', 0)
+    dev_null = open('/dev/null', 'r+')
+
+    os.dup2(stderr_log.fileno(), 2)
+    os.dup2(stdout_log.fileno(), 1)
+    os.dup2(dev_null.fileno(), 0)
+    sys.stderr = stderr_log
+    sys.stdout = stdout_log
+    sys.stdin = dev_null
+
+    pid = os.fork()
+    if pid > 0:
+        os._exit(0)
+    os.umask(octal('0022'))
+    os.setsid()
+    os.chdir("/")
+    pid = os.fork()
+    if pid > 0:
+        os._exit(0)
+
+    if pidfile is not None:
+        pid = os.getpid()
+        pf = open(pidfile, 'w')
+        pf.write("%d\n" % pid)
+        pf.close()
+
 if sys.version_info[0] >= 3:
     def execfile(f, g=None, l=None):
         exec(compile(open(f).read(), f, 'exec'), g, l)

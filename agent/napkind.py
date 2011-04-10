@@ -51,35 +51,7 @@ logging.config.fileConfig(options.logconfig)
 logging.debug('hello, this is napkind')
 
 if options.daemonize:
-    logfile = options.logfile
-    if logfile is None:
-        logfile = "/dev/null"
-    stdout_log = open(logfile, 'a+', 0)
-    stderr_log = open(logfile, 'a+', 0)
-    dev_null = open('/dev/null', 'r+')
-
-    os.dup2(stderr_log.fileno(), 2)
-    os.dup2(stdout_log.fileno(), 1)
-    os.dup2(dev_null.fileno(), 0)
-    sys.stderr = stderr_log
-    sys.stdout = stdout_log
-    sys.stdin = dev_null
-
-    pid = os.fork()
-    if pid > 0:
-        os._exit(0)
-    os.umask(napkin.helpers.octal('0022'))
-    os.setsid()
-    os.chdir("/")
-    pid = os.fork()
-    if pid > 0:
-        os._exit(0)
-
-    if options.pidfile is not None:
-        pid = os.getpid()
-        pf = open(options.pidfile, 'w')
-        pf.write("%d\n" % pid)
-        pf.close()
+    napkin.helpers.daemonize(options.logfile, options.pidfile)
 
 def do_run(manifest, options, conn, addr):
     (fd, tmpname) = tempfile.mkstemp('', '.napkin.conf.', options.statedir)

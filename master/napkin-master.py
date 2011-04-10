@@ -91,6 +91,8 @@ if 'GATEWAY_INTERFACE' in os.environ:
     else:
         resp.send_error(500, "Invalid request filename")
 else:
+    if config['daemonize']:
+        napkin.helpers.daemonize(config['logfile'], config['pidfile'])
     class ReportRequestHandler(napkin.api.BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.0"
         def send_error(self, status, msg):
