@@ -24,6 +24,10 @@ install:
 	cp -p etc/*.conf $(DESTDIR)$(pkgconfdir)
 	# Create state directory
 	mkdir -m 0700 -p $(DESTDIR)$(pkgstatedir)
+	# Install initscripts
+	mkdir -p $(DESTDIR)$(initddir)
+	cp -p agent/napkind.init $(DESTDIR)$(initddir)/napkind
+	cp -p master/napkin-master.init $(DESTDIR)$(initddir)/napkin-master
 
 dist: napkin-$(VERSION).tar.bz2
 napkin-$(VERSION).tar.bz2:
