@@ -38,8 +38,7 @@ except:
 try:
     import json
 except:
-    import simplejson
-    json = simplejson
+    import simplejson as json
 
 class SecureHTTPServer(HTTPServer):
     def __init__(self, *args, **kwargs):
