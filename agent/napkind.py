@@ -124,6 +124,7 @@ def send_report(report_data):
 manifest = napkin.manifest()
 
 if not do_run(manifest, options, None, None):
+    logging.error("unable to get initial manifest")
     os._exit(1)
 
 def do_monitoring():
