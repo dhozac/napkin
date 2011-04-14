@@ -1,0 +1,25 @@
+ 1. Install Python (preferably a recent one, but 2.4+ should work)
+
+ 2. Install napkin with
+    make install
+
+ 3. Get the easy-rsa suite from OpenSSL and configure it
+
+ 4. Generate a master certificate with
+    ./pkitool --server <server hostname>
+
+ 5. Put the master certificate in /etc/napkin/master.{crt,key}
+
+ 6. Generate agent certificates for all clients with
+    ./pkitool <hostname>
+
+ 7. Put agent's certificates in /etc/napkin/agent.{crt,key}
+
+ 8. Start napkin-master using the initscript or the command
+
+ 9. Create manifests for your hosts in /var/lib/napkin/master/manifests/<hostname>
+
+10. Set the master in /etc/sysconfig/napkind like
+    NAPKIND_ARGS="--master napkin.example.com"
+
+11. Start napkind using the initscript
