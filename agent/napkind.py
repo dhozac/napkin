@@ -75,10 +75,11 @@ if not options.report and options.master:
     options.report = "https://%s:12201/napkin/report" % options.master
 
 logging.config.fileConfig(options.logconfig)
-logging.debug('hello, this is napkind')
 
-if options.daemonize:
-    napkin.helpers.daemonize(options.logfile, options.pidfile)
+stderr_handler = logging.StreamHandler(sys.stderr)
+logging.getLogger().addHandler(stderr_handler)
+
+logging.debug('hello, this is napkind')
 
 def do_run(manifest, options, conn, addr):
     (fd, tmpname) = tempfile.mkstemp('', '.napkin.conf.', options.statedir)
@@ -126,6 +127,11 @@ manifest = napkin.manifest()
 if not do_run(manifest, options, None, None):
     logging.error("unable to get initial manifest")
     os._exit(1)
+
+if options.daemonize:
+    logging.getLogger().removeHandler(stderr_handler)
+    del stderr_handler
+    napkin.helpers.daemonize(options.logfile, options.pidfile)
 
 def do_monitoring():
     while True:
