@@ -59,8 +59,19 @@ def file_fetcher(url, writer, options=None):
     else:
         raise TypeError("source %s uses unknown scheme" % url)
 
-def octal(i):
-    return int(i, 8)
+def octal(v):
+    if isinstance(v, int):
+        ret = int(0)
+        for j in range(1, 32):
+            if v == 0:
+                break
+            p = pow(10, j - 1)
+            m = (v % (p * 10)) / p
+            v -= p * m
+            ret += pow(8, j - 1) * m
+        return ret
+    else:
+        return int(v, 8)
 
 def files_cmp(src, src_st, dst, dst_st):
     import mmap
