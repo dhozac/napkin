@@ -64,20 +64,18 @@ class t_file(napkin.resource):
                 try:
                     uid = int(self.owner)
                 except:
-                    pass
-                try:
-                    uid = pwd.getpwnam(self.owner).pw_uid
-                except:
-                    raise ValueError("unable to map owner %s" % self.owner)
+                    try:
+                        uid = pwd.getpwnam(self.owner).pw_uid
+                    except:
+                        raise ValueError("unable to map owner %s" % self.owner)
             if hasattr(self, 'group'):
                 try:
                     gid = int(self.group)
                 except:
-                    pass
-                try:
-                    gid = grp.getgrnam(self.group).gr_gid
-                except:
-                    raise ValueError("unable to map group %s" % self.group)
+                    try:
+                        gid = grp.getgrnam(self.group).gr_gid
+                    except:
+                        raise ValueError("unable to map group %s" % self.group)
             os.chown(self.tmpname, uid, gid)
         if napkin.helpers.files_differ(self.tmpname, self.dest):
             if os.path.lexists(self.dest):
