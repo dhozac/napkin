@@ -73,6 +73,12 @@ if not options.manifest and options.master:
     options.manifest = "https://%s:12201/napkin/manifest" % options.master
 if not options.report and options.master:
     options.report = "https://%s:12201/napkin/report" % options.master
+if not options.cacert:
+    options.cacert = "/etc/napkin/ca.crt"
+if not options.cert:
+    options.cert = "/etc/napkin/agent.crt"
+if not options.key:
+    options.key = "/etc/napkin/agent.key"
 
 logging.config.fileConfig(options.logconfig)
 
