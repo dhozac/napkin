@@ -124,6 +124,14 @@ def daemonize(logfile=None, pidfile=None):
         pf.write("%d\n" % pid)
         pf.close()
 
+def to_bytes(s):
+    if hasattr(s, 'encode'):
+        return s.encode('utf-8')
+    elif isinstance(s, bytes):
+        return s
+    else:
+        raise TypeError("object has unknown type %s" % type(s))
+
 if sys.version_info[0] >= 3:
     def execfile(f, g=None, l=None):
         exec(compile(open(f).read(), f, 'exec'), g, l)

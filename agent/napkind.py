@@ -85,7 +85,7 @@ def do_run(manifest, options, conn, addr):
     (fd, tmpname) = tempfile.mkstemp('', '.napkin.conf.', options.statedir)
     ret = False
     try:
-        napkin.helpers.file_fetcher(options.manifest, lambda x: os.write(fd, x.encode('utf-8')))
+        napkin.helpers.file_fetcher(options.manifest, lambda x: os.write(fd, napkin.helpers.to_bytes(x)))
         os.close(fd)
         os.rename(tmpname, os.path.join(options.statedir, "napkin.conf"))
         ret = True
