@@ -27,7 +27,15 @@ import napkin.api
 
 config = {}
 execfile('/etc/napkin/master.conf', config, config)
-logging.basicConfig(filename=config['logfile'], level=getattr(logging, config['loglevel']))
+root_logger = logging.getLogger()
+log_handler = logging.FileHandler(config['logfile'])
+formatter = logging.Formatter("%(asctime)s napkin: %(message)s")
+log_handler.setFormatter(formatter)
+root_logger.addHandler(log_handler)
+root_logger.setLevel(getattr(logging, config['loglevel']))
+del root_logger
+del formatter
+del log_handler
 
 def process_report(hostname, rfp, wfp, resp):
     if hostname is None:
@@ -53,11 +61,14 @@ def create_manifest(hostname, rfp, wfp, resp):
     if hostname is None:
         resp.send_error(400, "No common name found in certificate!\r\n")
         return
-    resp.send_response(200)
-    resp.end_headers()
     manifest = napkin.manifest()
     manifest.read(os.path.join(config['manifestdir'], hostname))
-    wfp.write(repr(manifest))
+    r = repr(manifest)
+    resp.send_response(200)
+    resp.send_header("Content-Type", "application/x-napkin-manifest")
+    resp.send_header("Content-Length", "%d" % len(r))
+    resp.end_headers()
+    wfp.write(r)
 
 def send_file(hostname, path, rfp, wfp, resp):
     if hostname is None:
@@ -118,15 +129,17 @@ else:
     class MasterRequestHandler(napkin.api.BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.0"
         server_version = "napkin/0.1"
-        def send_error(self, status, msg):
+        def send_error(self, status, msg=None):
             self.send_response(400)
             self.end_headers()
-            self.wfile.write(msg)
+            if msg:
+                self.wfile.write(msg)
         def do_GET(self):
             hostname = None
             for i in self.request.peercert['subject']:
                 if i[0][0] == 'commonName':
                     hostname = i[0][1]
+            logging.debug("Request: %s %s" % (hostname, self.path))
             if self.path.startswith("/napkin"):
                 self.path = self.path[7:]
             if self.path == "/manifest":
