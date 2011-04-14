@@ -18,9 +18,13 @@
 
 import os
 
+if os.name == 'posix':
+    from napkin.providers.posix import *
+
+if os.uname()[0] == 'Linux':
+    from napkin.providers.linux import *
+
 if (os.path.exists("/etc/fedora-release") or
     os.path.exists("/etc/redhat-release") or
     os.path.exists("/etc/centos-release")):
-    from napkin.providers.posix import *
-    from napkin.providers.linux import *
     from napkin.providers.redhat import *
