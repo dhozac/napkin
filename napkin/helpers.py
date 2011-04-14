@@ -60,14 +60,14 @@ def files_cmp(src, src_st, dst, dst_st):
     f2 = open(dst, 'rb')
     map1 = mmap.mmap(f1.fileno(), src_st.st_size, mmap.MAP_SHARED, mmap.PROT_READ)
     map2 = mmap.mmap(f2.fileno(), dst_st.st_size, mmap.MAP_SHARED, mmap.PROT_READ)
-    ret = False
+    ret = True
     i = 0
     for i in range(0, int(src_st.st_size / 4096)):
         if map1[i*4096:i*4096+4095] != map2[i*4096:i*4096+4095]:
-            ret = True
+            ret = False
             break
     if not ret and map1[i*4096:] != map2[i*4096:]:
-        ret = True
+        ret = False
     map1.close()
     map2.close()
     f1.close()
@@ -92,7 +92,7 @@ def files_differ(src, dst):
     for i in ['st_size', 'st_mode', 'st_uid', 'st_gid']:
         if getattr(dst_st, i) != getattr(src_st, i):
             return True
-    return files_cmp(src, src_st, dst, dst_st)
+    return not files_cmp(src, src_st, dst, dst_st)
 
 def daemonize(logfile=None, pidfile=None):
     if logfile is None:
