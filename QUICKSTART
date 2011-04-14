@@ -3,7 +3,7 @@
  2. Install napkin with
     make install
 
- 3. Get the easy-rsa suite from OpenSSL and configure it
+ 3. Get the easy-rsa suite from OpenVPN and configure it
 
  4. Generate a master certificate with
     ./pkitool --server <server hostname>
