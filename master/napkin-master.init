@@ -2,7 +2,7 @@
 #
 # napkin-master - controls a napkin network
 #
-# chkconfig:   - 99 01
+# chkconfig:   - 98 02
 # description: controls a napkin network
 
 ### BEGIN INIT INFO
