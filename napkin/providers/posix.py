@@ -32,7 +32,7 @@ class t_file(napkin.resource):
         'filter': {},
         'owner': {},
         'group': {},
-        'mode': {'type': lambda x: int(x, 8), 'default': napkin.helpers.octal('644')},
+        'mode': {'type': int, 'type_args': (8,), 'default': napkin.helpers.octal('644')},
         'content': {},
         'recurse': {'type': bool, 'default': False},
         'replace': {'type': bool, 'default': True},

@@ -298,7 +298,7 @@ class resource:
         'before': {'type': [resource_ref], 'default': []},
         'after': {'type': [resource_ref], 'default': []},
     }
-    def convert_value(self, t, v):
+    def convert_value(self, t, v, args):
         if isinstance(t, (list, tuple)) or t == list or t == tuple:
             if not isinstance(v, (list, tuple)):
                 v = [v]
@@ -307,6 +307,8 @@ class resource:
                 t[0] = str
             for i in v:
                 nv.append(self.convert_value(t[0], i))
+        elif isinstance(v, t):
+            return v
         elif t == bool:
             if isinstance(v, (str, unicode)):
                 vl = v.lower()
@@ -319,7 +321,7 @@ class resource:
             else:
                 nv = bool(v)
         else:
-            nv = t(v)
+            nv = t(v, *args)
         return nv
     def __init__(self, *args, **kwargs):
         self.before = []
@@ -349,7 +351,11 @@ class resource:
                 else:
                     raise TypeError("unknown alias %s" % (i))
             if 'type' in prop:
-                val = self.convert_value(prop['type'], val)
+                if 'type_args' in prop:
+                    args = prop['type_args']
+                else:
+                    args = tuple()
+                val = self.convert_value(prop['type'], val, args)
             setattr(self, i, val)
         if not hasattr(self, 'name'):
             if hasattr(self, 'def_name') and hasattr(self, self.def_name):
