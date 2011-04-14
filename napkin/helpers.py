@@ -21,7 +21,7 @@ import sys
 import subprocess
 import errno
 
-def file_fetcher(url, writer):
+def file_fetcher(url, writer, options=None):
     if url.startswith("/") or url.startswith("file://"):
         if url.startswith("file://"):
             url = url[7:]
@@ -33,7 +33,15 @@ def file_fetcher(url, writer):
             writer(buf)
         f.close()
     elif url.startswith("http://") or url.startswith("https://") or url.startswith("ftp://"):
-        p = subprocess.Popen(["curl", "-s", "-S", "-L", "-f", url], stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        cmd = ["curl", "-s", "-S", "-L", "-f"]
+        if hasattr(options, 'cacert') and options.cacert:
+            cmd += ["--cacert", options.cacert]
+        if hasattr(options, 'cert') and options.cert:
+            cmd += ["--cert", options.cert]
+            if hasattr(options, 'key') and options.key:
+                cmd += ["--key", options.key]
+        cmd.append(url)
+        p = subprocess.Popen(cmd, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while True:
             buf = p.stdout.readline(4096)
             if not buf:
@@ -47,7 +55,7 @@ def file_fetcher(url, writer):
             stderr += buf
         ret = p.wait()
         if ret != 0:
-            raise Exception("unable to execute curl: %d: %s" % (ret, stderr))
+            raise Exception("unable to execute %s: %d: %s" % (cmd, ret, stderr))
     else:
         raise TypeError("source %s uses unknown scheme" % url)
 
