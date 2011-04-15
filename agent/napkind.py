@@ -95,14 +95,15 @@ def do_run(manifest, options, conn, addr):
         os.close(fd)
         os.rename(tmpname, os.path.join(options.statedir, "napkin.conf"))
     except:
-        logger.exception("failed to download napkin.conf")
+        e = sys.exc_info()[1]
+        logger.error("failed to download napkin.conf: %s", str(e))
         os.close(fd)
         os.unlink(tmpname)
         if not os.path.exists(os.path.join(options.statedir, "napkin.conf")):
             return False
     manifest.read(os.path.join(options.statedir, "napkin.conf"))
     manifest.run()
-    logger.debug("executed manifest =\n%s" % manifest)
+    logger.debug("executed manifest =\n%s", manifest)
     return True
 
 def send_report(report_data):
@@ -125,7 +126,7 @@ def send_report(report_data):
     (stdout, stderr) = p.communicate()
     os.unlink(tmpname)
     if p.returncode != 0:
-        logger.error("sending report failed: %d: %s" % (p.returncode, stderr))
+        logger.error("sending report failed: %d: %s", p.returncode, stderr)
 
 manifest = napkin.manifest()
 
@@ -160,14 +161,14 @@ class AgentRequestHandler(napkin.api.BaseHTTPRequestHandler):
             if i[0][0] == 'commonName':
                 hostname = i[0][1]
         if hostname != options.master:
-            logger.warning("Request for %s from %s not from configured master %s" % (self.path, hostname, config['master']))
+            logger.warning("Request for %s from %s not from configured master %s", self.path, hostname, config['master'])
             self.send_error(401)
             self.wfile.write("Request not from configured master!")
             return
         if self.path == "/run":
             result = do_run(manifest, options, None, None)
         else:
-            logger.warning("Unknown request for %s" % self.path)
+            logger.warning("Unknown request for %s", self.path)
             self.send_error(404)
             self.wfile.write("Unknown request %s" % self.path)
             return

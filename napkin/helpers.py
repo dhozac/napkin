@@ -20,6 +20,14 @@ import os
 import sys
 import subprocess
 import errno
+import logging
+
+logger = logging.getLogger("napkin.helpers")
+
+class FetchException(Exception):
+    def __init__(self, cmd, ret, msg):
+        Exception.__init__(self, "%s failed with %s" % (cmd[0], msg))
+        logger.debug("FetchException: %s, %s, %s" % (cmd, ret, msg))
 
 def file_fetcher(url, writer, options=None):
     if url.startswith("/") or url.startswith("file://"):
@@ -55,7 +63,7 @@ def file_fetcher(url, writer, options=None):
             stderr += buf
         ret = p.wait()
         if ret != 0:
-            raise Exception("unable to execute %s: %d: %s" % (cmd, ret, stderr))
+            raise FetchException(cmd, ret, stderr)
     else:
         raise TypeError("source %s uses unknown scheme" % url)
 
