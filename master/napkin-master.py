@@ -27,7 +27,7 @@ import napkin.api
 
 config = {}
 execfile('/etc/napkin/master.conf', config, config)
-root_logger = logging.getLogger()
+root_logger = logging.getLogger("napkin")
 log_handler = logging.FileHandler(config['logfile'])
 formatter = logging.Formatter("%(asctime)s napkin: %(message)s")
 log_handler.setFormatter(formatter)
@@ -36,6 +36,7 @@ root_logger.setLevel(getattr(logging, config['loglevel']))
 del root_logger
 del formatter
 del log_handler
+logger = logging.getLogger("napkin.master")
 
 def process_report(hostname, rfp, wfp, resp):
     if hostname is None:
@@ -52,7 +53,7 @@ def process_report(hostname, rfp, wfp, resp):
         length -= len(ret)
         data += ret.decode("utf-8")
     report = napkin.api.deserialize(data)
-    logging.debug("%s: %s: %s" % (hostname, time.time(), report))
+    logger.debug("%s: %s: %s" % (hostname, time.time(), report))
     resp.send_response(200)
     resp.end_headers()
     wfp.write("1\r\n")
@@ -139,7 +140,7 @@ else:
             for i in self.request.peercert['subject']:
                 if i[0][0] == 'commonName':
                     hostname = i[0][1]
-            logging.debug("Request: %s %s" % (hostname, self.path))
+            logger.debug("Request: %s %s" % (hostname, self.path))
             if self.path.startswith("/napkin"):
                 self.path = self.path[7:]
             if self.path == "/manifest":
@@ -172,4 +173,4 @@ else:
     except KeyboardInterrupt:
         pass
     except:
-        logging.exception("Server crashed!")
+        logger.exception("Server crashed!")
