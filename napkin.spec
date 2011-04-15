@@ -55,6 +55,8 @@ Configures a napkin node.
 %install
 rm -rf "%{buildroot}"
 make install DESTDIR="%{buildroot}" \
+	PYTHON="%{__python}" \
+	prefix="%{_prefix}" \
 	sbindir="%{_sbindir}" \
 	initddir="%{_initrddir}" \
 	pythondir="%{python_sitelib}" \
