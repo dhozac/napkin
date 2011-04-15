@@ -23,6 +23,13 @@ import logging
 import threading
 import napkin.helpers as helpers
 
+if not hasattr(logging, 'NullHandler'):
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
+    logging.NullHandler = NullHandler
+logger = logging.getLogger("napkin.lib")
+
 class resource_ref:
     """A light-weight reference to a resource"""
     def __init__(self, c, n = None):
@@ -147,20 +154,20 @@ class manifest:
         for i in self:
             r = i.pre()
             if r:
-                logging.info(r)
+                logger.info(r)
         for i in self:
             if not i.can_run():
                 continue
             try:
                 r = i.run()
                 if r:
-                    logging.info(r)
+                    logger.info(r)
             except:
-                logging.exception("%s: run failed" % i.name)
+                logger.exception("%s: run failed" % i.name)
         for i in self:
             r = i.post()
             if r:
-                logging.info(r)
+                logger.info(r)
         self.unlock()
     def clear(self):
         self.resources.clear()
@@ -214,7 +221,7 @@ class manifest:
             return
         self.get_rlock()
         curtime = int(time.time())
-        logging.debug("running monitors at %d:\n%s" % (curtime, self.monitors))
+        logger.debug("running monitors at %d:\n%s" % (curtime, self.monitors))
         while self.monitors[0]['time'] <= curtime:
             d = self.monitors.pop(0)
             try:
@@ -227,12 +234,12 @@ class manifest:
             except MonitorException:
                 t = sys.exc_info()[0]
                 e = sys.exc_info()[1]
-                logging.warning("%s: %s" % (d['key'], e))
+                logger.warning("%s: %s" % (d['key'], e))
                 i.notify_subscribers(t, e)
                 self.report_exception(i, t, e)
                 val = e.val
             except:
-                logging.exception("unknown exception from %s" % d['key'])
+                logger.exception("unknown exception from %s" % d['key'])
                 t = sys.exc_info()[0]
                 e = sys.exc_info()[1]
                 self.report_exception(t, e, True)
@@ -443,5 +450,5 @@ class monitor(resource):
     def notify_subscribers(self, t, e):
         for i in self.subscribers:
             if i[1] == t.__name__:
-                logging.debug("running rectifier for %s %s: %s" % (resource_ref(self), t.__name__, resource_ref(i[0])))
+                logger.debug("running rectifier for %s %s: %s" % (resource_ref(self), t.__name__, resource_ref(i[0])))
                 i[0].run()

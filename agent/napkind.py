@@ -82,10 +82,11 @@ if not options.key:
 
 logging.config.fileConfig(options.logconfig)
 
+logger = logging.getLogger("napkin.agent")
 stderr_handler = logging.StreamHandler(sys.stderr)
-logging.getLogger().addHandler(stderr_handler)
+logger.addHandler(stderr_handler)
 
-logging.debug('hello, this is napkind')
+logger.debug('hello, this is napkind')
 
 def do_run(manifest, options, conn, addr):
     (fd, tmpname) = tempfile.mkstemp('', '.napkin.conf.', options.statedir)
@@ -96,14 +97,14 @@ def do_run(manifest, options, conn, addr):
         os.rename(tmpname, os.path.join(options.statedir, "napkin.conf"))
         ret = True
     except:
-        logging.exception("failed to download napkin.conf")
+        logger.exception("failed to download napkin.conf")
         os.close(fd)
         os.unlink(tmpname)
         if not os.path.exists(os.path.join(options.statedir, "napkin.conf")):
             return False
     manifest.read(os.path.join(options.statedir, "napkin.conf"))
     manifest.run()
-    logging.debug("executed manifest =\n%s" % manifest)
+    logger.debug("executed manifest =\n%s" % manifest)
     return ret
 
 def send_report(report_data):
@@ -126,16 +127,16 @@ def send_report(report_data):
     (stdout, stderr) = p.communicate()
     os.unlink(tmpname)
     if p.returncode != 0:
-        logging.error("sending report failed: %d: %s" % (p.returncode, stderr))
+        logger.error("sending report failed: %d: %s" % (p.returncode, stderr))
 
 manifest = napkin.manifest()
 
 if not do_run(manifest, options, None, None):
-    logging.error("unable to get initial manifest")
+    logger.error("unable to get initial manifest")
     os._exit(1)
 
 if options.daemonize:
-    logging.getLogger().removeHandler(stderr_handler)
+    logger.removeHandler(stderr_handler)
     del stderr_handler
     napkin.helpers.daemonize(options.logfile, options.pidfile)
 
@@ -147,7 +148,7 @@ def do_monitoring():
         time.sleep(time_left)
         manifest.monitor()
         send_report(manifest.get_report())
-    logging.error("monitor dying")
+    logger.error("monitor dying")
 
 monitor = threading.Thread(target=do_monitoring)
 monitor.start()
@@ -161,14 +162,14 @@ class AgentRequestHandler(napkin.api.BaseHTTPRequestHandler):
             if i[0][0] == 'commonName':
                 hostname = i[0][1]
         if hostname != options.master:
-            logging.warning("Request for %s from %s not from configured master %s" % (self.path, hostname, config['master']))
+            logger.warning("Request for %s from %s not from configured master %s" % (self.path, hostname, config['master']))
             self.send_error(401)
             self.wfile.write("Request not from configured master!")
             return
         if self.path == "/run":
             result = do_run(manifest, options, None, None)
         else:
-            logging.warning("Unknown request for %s" % self.path)
+            logger.warning("Unknown request for %s" % self.path)
             self.send_error(404)
             self.wfile.write("Unknown request %s" % self.path)
             return
