@@ -21,7 +21,11 @@ install:
 	cp -p master/napkin-master.py $(DESTDIR)$(sbindir)/napkin-master
 	# Copy configuration
 	mkdir -m 0700 -p $(DESTDIR)$(pkgconfdir)
-	cp -p etc/*.conf $(DESTDIR)$(pkgconfdir)
+	@for i in etc/*.conf; do \
+		if test ! -e $(DESTDIR)$(pkgconfdir)/`basename $$i`; then \
+			echo cp -p $$i $(DESTDIR)$(pkgconfdir); \
+			cp -p $$i $(DESTDIR)$(pkgconfdir); \
+		fi; done
 	# Create state directory
 	mkdir -m 0700 -p $(DESTDIR)$(pkgstatedir)
 	# Install initscripts
