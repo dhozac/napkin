@@ -90,12 +90,10 @@ logger.debug('hello, this is napkind')
 
 def do_run(manifest, options, conn, addr):
     (fd, tmpname) = tempfile.mkstemp('', '.napkin.conf.', options.statedir)
-    ret = False
     try:
         napkin.helpers.file_fetcher(options.manifest, lambda x: os.write(fd, napkin.helpers.to_bytes(x)), options)
         os.close(fd)
         os.rename(tmpname, os.path.join(options.statedir, "napkin.conf"))
-        ret = True
     except:
         logger.exception("failed to download napkin.conf")
         os.close(fd)
@@ -105,7 +103,7 @@ def do_run(manifest, options, conn, addr):
     manifest.read(os.path.join(options.statedir, "napkin.conf"))
     manifest.run()
     logger.debug("executed manifest =\n%s" % manifest)
-    return ret
+    return True
 
 def send_report(report_data):
     if not options.report:
