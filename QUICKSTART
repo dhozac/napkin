@@ -1,4 +1,5 @@
- 1. Install Python (preferably a recent one, but 2.4+ should work)
+ 1. Install Python (preferably a recent one, but 2.4+ should work), curl
+    and simplejson (if you're on an older Python)
 
  2. Install napkin with
     make install
