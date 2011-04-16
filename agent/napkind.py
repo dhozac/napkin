@@ -57,6 +57,12 @@ if options.conffile and os.path.exists(options.conffile):
             setattr(options, i, d[i])
     del d
 
+def file_if_exists(fn):
+    if os.path.exists(fn):
+        return fn
+    else:
+        return None
+
 if not options.logconfig:
     options.logconfig = "/etc/napkin/logging.conf"
 if not options.logfile:
@@ -74,11 +80,11 @@ if not options.manifest and options.master:
 if not options.report and options.master:
     options.report = "https://%s:12201/napkin/report" % options.master
 if not options.cacert:
-    options.cacert = "/etc/napkin/ca.crt"
+    options.cacert = file_if_exists("/etc/napkin/ca.crt")
 if not options.cert:
-    options.cert = "/etc/napkin/agent.crt"
+    options.cert = file_if_exists("/etc/napkin/agent.crt")
 if not options.key:
-    options.key = "/etc/napkin/agent.key"
+    options.key = file_if_exists("/etc/napkin/agent.key")
 
 logging.config.fileConfig(options.logconfig)
 
