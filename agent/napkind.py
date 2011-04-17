@@ -120,19 +120,12 @@ def send_report(report_data):
     (fd, tmpname) = tempfile.mkstemp()
     os.write(fd, str(report_data).encode("utf-8"))
     os.close(fd)
-    cmd = ["curl", "-s", "-S", "-L", "-f", "--data-binary", "@%s" % tmpname, "-H", "Content-Type: application/x-napkin-report"]
-    if options.cert:
-        cmd += ["--cert", options.cert]
-        if options.key:
-            cmd += ["--key", options.key]
-    if options.cacert:
-        cmd += ["--cacert", options.cacert]
-    cmd += [options.report]
-    p = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (stdout, stderr) = p.communicate()
+    try:
+        napkin.helpers.file_sender(options.report, tmpname, "application/x-napkin-report", options)
+    except:
+        e = sys.exc_info()[1]
+        logger.error("sending report failed: %s", e)
     os.unlink(tmpname)
-    if p.returncode != 0:
-        logger.error("sending report failed: %d: %s", p.returncode, stderr)
 
 manifest = napkin.manifest()
 

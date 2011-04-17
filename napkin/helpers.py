@@ -67,6 +67,27 @@ def file_fetcher(url, writer, options=None):
     else:
         raise TypeError("source %s uses unknown scheme" % url)
 
+def file_sender(url, filename, mimetype=None, options=None):
+    if url.startswith("http://") or url.startswith("https://"):
+        cmd = ["curl", "-s", "-S", "-L", "-f", "--data-binary", "@%s" % filename]
+        if mimetype:
+            cmd += ["-H", "Content-Type: %s" % mimetype]
+        if options and options.cert:
+            cmd += ["--cert", options.cert]
+            if options.key:
+                cmd += ["--key", options.key]
+        if options and options.cacert:
+            cmd += ["--cacert", options.cacert]
+        cmd += [url]
+        p = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout, stderr) = p.communicate()
+        if p.returncode != 0:
+            raise FetchException(cmd, ret, stderr)
+        elif stdout != "1\r\n":
+            raise FetchException(cmd, ret, stdout)
+    else:
+        raise TypeError("source %s uses unknown scheme" % url)
+
 def octal(v):
     if isinstance(v, int):
         ret = int(0)
