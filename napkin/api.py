@@ -54,9 +54,9 @@ class SecureHTTPServer(HTTPServer):
         sconn.peercert = sconn.getpeercert()
         return (sconn, addr)
 
-def serialize(data):
-    if hasattr(data, 'read'):
-        return json.dump(data)
+def serialize(data, fp=None):
+    if fp:
+        return json.dump(data, fp)
     else:
         return json.dumps(data)
 def deserialize(data, length=None):

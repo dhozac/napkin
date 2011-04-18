@@ -118,7 +118,7 @@ def send_report(report_data):
     if not report_data:
         return
     (fd, tmpname) = tempfile.mkstemp()
-    os.write(fd, str(report_data).encode("utf-8"))
+    os.write(fd, napkin.api.serialize(report_data))
     os.close(fd)
     try:
         napkin.helpers.file_sender(options.report, tmpname, "application/x-napkin-report", options)
