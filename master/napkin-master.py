@@ -26,7 +26,7 @@ import napkin.helpers
 import napkin.api
 
 config = {}
-execfile('/etc/napkin/master.conf', config, config)
+napkin.helpers.execfile('/etc/napkin/master.conf', config, config)
 root_logger = logging.getLogger("napkin")
 log_handler = logging.FileHandler(config['logfile'])
 formatter = logging.Formatter("%(asctime)s napkin: %(message)s")
