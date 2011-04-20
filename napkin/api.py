@@ -16,14 +16,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import socket
+import logging
+
 try:
     from http.server import HTTPServer, BaseHTTPRequestHandler
 except:
     from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 try:
-    from ssl import wrap_socket as ssl_wrap_socket, CERT_REQUIRED as CERT_REQ
+    from http.client import HTTPConnection
+except:
+    from httplib import HTTPConnection
+try:
+    from urllib.parse import urlparse
+except:
+    from urlparse import urlparse
+try:
+    from ssl import wrap_socket as ssl_wrap_socket, CERT_REQUIRED as CERT_REQ, CERT_NONE, CERT_OPTIONAL as CERT_OPT
 except:
     import OpenSSL
+    CERT_NONE = 0
+    CERT_REQ = 1
+    CERT_OPT = 2
     def ssl_wrap_socket(conn, keyfile=None, certfile=None, ca_certs=None, cert_reqs=None, server_side=None):
         ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
         if keyfile is not None:
@@ -40,8 +54,11 @@ try:
 except:
     import simplejson as json
 
+logger = logging.getLogger("napkin.api")
+
 class SecureHTTPServer(HTTPServer):
     def __init__(self, *args, **kwargs):
+        self.timeout = 86400
         self.ssl_wrap_args = {'server_side': True}
         for i in ['keyfile', 'certfile', 'ca_certs', 'cert_reqs']:
             if i in kwargs:
@@ -53,6 +70,21 @@ class SecureHTTPServer(HTTPServer):
         sconn = ssl_wrap_socket(conn, **self.ssl_wrap_args)
         sconn.peercert = sconn.getpeercert()
         return (sconn, addr)
+
+class SecureHTTPConnection(HTTPConnection):
+    def __init__(self, *args, **kwargs):
+        self.ssl_wrap_args = {'server_side': False}
+        for i in ['keyfile', 'certfile', 'ca_certs', 'cert_reqs']:
+            if i in kwargs:
+                self.ssl_wrap_args[i] = kwargs[i]
+                del kwargs[i]
+        HTTPConnection.__init__(self, *args, **kwargs)
+    def connect(self):
+        sock = socket.create_connection((self.host, self.port), self.timeout)
+        if self._tunnel_host:
+            self.sock = sock
+            self._tunnel()
+        self.sock = ssl_wrap_socket(sock, **self.ssl_wrap_args)
 
 def serialize(data, fp=None):
     if fp:

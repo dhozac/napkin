@@ -53,10 +53,11 @@ def process_report(hostname, rfp, wfp, resp):
         length -= len(ret)
         data += ret.decode("utf-8")
     report = napkin.api.deserialize(data)
-    logger.debug("%s: %s: %s", hostname, time.time(), report)
+    logger.debug("%s: %s", hostname, report)
     resp.send_response(200)
+    resp.send_header("Content-Length", "3")
     resp.end_headers()
-    wfp.write("1\r\n")
+    wfp.write("1\r\n".encode("utf-8"))
 
 def create_manifest(hostname, rfp, wfp, resp):
     if hostname is None:
@@ -69,7 +70,7 @@ def create_manifest(hostname, rfp, wfp, resp):
     resp.send_header("Content-Type", "application/x-napkin-manifest")
     resp.send_header("Content-Length", "%d" % len(r))
     resp.end_headers()
-    wfp.write(r)
+    wfp.write(r.encode("utf-8"))
 
 def send_file(hostname, path, rfp, wfp, resp):
     if hostname is None:
@@ -87,6 +88,24 @@ def send_file(hostname, path, rfp, wfp, resp):
     f = open(filename, 'rb')
     shutil.copyfileobj(f, wfp)
     f.close()
+
+def register(hostname, rfp, wfp, resp):
+    length = resp.headers.get("content-length", None)
+    if length is None:
+        resp.send_error(400, "No Content-Length in request!\r\n")
+        return
+    length = int(length)
+    data = ""
+    while length > 0:
+        ret = rfp.read(length)
+        length -= len(ret)
+        data += ret.decode("utf-8")
+    registration = napkin.api.deserialize(data)
+    logger.debug("%s: %s", hostname, registration)
+    resp.send_response(200)
+    resp.send_header("Content-Length", "3")
+    resp.end_headers()
+    wfp.write("1\r\n".encode("utf-8"))
 
 if 'GATEWAY_INTERFACE' in os.environ:
     class Wrapper:
@@ -130,37 +149,53 @@ else:
     class MasterRequestHandler(napkin.api.BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.0"
         server_version = "napkin/0.1"
-        def send_error(self, status, msg=None):
-            self.send_response(400)
+        def send_error(self, status=400, msg=None):
+            if msg:
+                msg = msg.encode("utf-8")
+            self.send_response(status)
+            if msg:
+                self.send_header("Content-Length", len(msg))
             self.end_headers()
             if msg:
                 self.wfile.write(msg)
         def do_GET(self):
-            hostname = None
-            for i in self.request.peercert['subject']:
-                if i[0][0] == 'commonName':
-                    hostname = i[0][1]
-            logger.debug("GET request: %s %s", hostname, self.path)
-            if self.path.startswith("/napkin"):
-                self.path = self.path[7:]
-            if self.path == "/manifest":
-                create_manifest(hostname, self.rfile, self.wfile, self)
-            elif self.path.startswith("/files/"):
-                send_file(hostname, self.path, self.rfile, self.wfile, self)
-            else:
-                self.send_error(404)
+            try:
+                hostname = None
+                if self.request.peercert:
+                    for i in self.request.peercert['subject']:
+                        if i[0][0] == 'commonName':
+                            hostname = i[0][1]
+                logger.debug("%s GET %s", hostname, self.path)
+                if self.path.startswith("/napkin"):
+                    self.path = self.path[7:]
+                if self.path == "/manifest":
+                    create_manifest(hostname, self.rfile, self.wfile, self)
+                elif self.path.startswith("/files/"):
+                    send_file(hostname, self.path, self.rfile, self.wfile, self)
+                else:
+                    self.send_error(404)
+            except:
+                logger.exception("failure in GET %s" % self.path)
+                self.send_error(500)
         def do_POST(self):
-            hostname = None
-            for i in self.request.peercert['subject']:
-                if i[0][0] == 'commonName':
-                    hostname = i[0][1]
-            logger.debug("POST request: %s %s", hostname, self.path)
-            if self.path.startswith("/napkin"):
-                self.path = self.path[7:]
-            if self.path == "/report":
-                process_report(hostname, self.rfile, self.wfile, self)
-            else:
-                self.send_error(404)
+            try:
+                hostname = None
+                if self.request.peercert:
+                    for i in self.request.peercert['subject']:
+                        if i[0][0] == 'commonName':
+                            hostname = i[0][1]
+                logger.debug("%s POST %s", hostname, self.path)
+                if self.path.startswith("/napkin"):
+                    self.path = self.path[7:]
+                if self.path == "/report":
+                    process_report(hostname, self.rfile, self.wfile, self)
+                elif self.path == "/register":
+                    register(hostname, self.rfile, self.wfile, self)
+                else:
+                    self.send_error(404)
+            except:
+                logger.exception("failure in POST %s" % self.path)
+                self.send_error(500)
         def log_message(self, *args, **kwargs):
             pass
 
@@ -169,10 +204,10 @@ else:
                     keyfile=config['key'],
                     ca_certs=config['cacert'],
                     certfile=config['cert'],
-                    cert_reqs=napkin.api.CERT_REQ)
+                    cert_reqs=napkin.api.CERT_OPT)
 
     try:
-        server.serve_forever()
+        server.serve_forever(None)
     except KeyboardInterrupt:
         pass
     except:

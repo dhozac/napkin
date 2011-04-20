@@ -37,6 +37,7 @@ parser.add_option("-d", "--daemonize", action="store_true", dest="daemonize")
 parser.add_option("-C", "--config", action="store", dest="conffile", default="/etc/napkin/napkind.conf")
 parser.add_option("-m", "--manifest", action="store", dest="manifest")
 parser.add_option("-r", "--report", action="store", dest="report")
+parser.add_option("-R", "--register", action="store", dest="register")
 parser.add_option("-l", "--logconfig", action="store", dest="logconfig")
 parser.add_option("-L", "--logfile", action="store", dest="logfile")
 parser.add_option("-p", "--pidfile", action="store", dest="pidfile")
@@ -47,6 +48,7 @@ parser.add_option("-c", "--cert", action="store", dest="cert")
 parser.add_option("-k", "--key", action="store", dest="key")
 parser.add_option("-a", "--cacert", action="store", dest="cacert")
 parser.add_option("-M", "--master", action="store", dest="master")
+parser.add_option("-T", "--no-tls", action="store_false", dest="tls", default=True)
 (options, args) = parser.parse_args(sys.argv[1:])
 
 if options.conffile and os.path.exists(options.conffile):
@@ -79,12 +81,14 @@ if not options.manifest and options.master:
     options.manifest = "https://%s:12201/napkin/manifest" % options.master
 if not options.report and options.master:
     options.report = "https://%s:12201/napkin/report" % options.master
-if not options.cacert:
-    options.cacert = file_if_exists("/etc/napkin/ca.crt")
-if not options.cert:
-    options.cert = file_if_exists("/etc/napkin/agent.crt")
-if not options.key:
-    options.key = file_if_exists("/etc/napkin/agent.key")
+if not options.register and options.master:
+    options.register = "https://%s:12201/napkin/register" % options.master
+if not options.cacert and options.tls:
+    options.cacert = "/etc/napkin/ca.crt"
+if not options.cert and options.tls:
+    options.cert = "/etc/napkin/agent.crt"
+if not options.key and options.tls:
+    options.key = "/etc/napkin/agent.key"
 
 logging.config.fileConfig(options.logconfig)
 
@@ -127,10 +131,49 @@ def send_report(report_data):
         logger.error("sending report failed: %s", e)
     os.unlink(tmpname)
 
+if options.master:
+    import napkin.providers
+    import socket
+    data = {'hostname': socket.gethostname(),
+            'providers': napkin.providers.providers}
+    (fd, tmpname) = tempfile.mkstemp()
+    os.close(fd)
+    if options.tls:
+        if not os.path.exists(options.cert):
+            if subprocess.call(["certtool", "--bits", "2048", "-p",
+                                "--outfile", options.key]) != 0:
+                logger.error("failed to generate private key")
+                os._exit(1)
+            if subprocess.call(["certtool", "--template", tmpname,
+                                "-q", "--load-privkey", options.key,
+                                "--outfile",
+                                options.cert.replace(".crt", ".csr")]) != 0:
+                logger.error("failed to generate csr")
+                os._exit(1)
+            data['csr'] = open(options.cert.replace(".crt", ".csr"), 'r').read()
+    f = open(tmpname, 'w')
+    napkin.api.serialize(data, f)
+    f.close()
+    failure = True
+    try:
+        ret = napkin.helpers.file_sender(options.register, tmpname, "application/x-napkin-register", options).decode("utf-8")
+        if not napkin.api.deserialize(ret):
+            raise Exception("received failure from master: %s" % ret)
+        failure = False
+    except:
+        logger.exception("registering with %s failed", options.register)
+    os.unlink(tmpname)
+    if failure:
+        os._exit(1)
+    if 'csr' in data:
+        logger.warning("waiting for cert...")
+        while True:
+            time.sleep(60)
+
 manifest = napkin.manifest()
 
 if not do_run(manifest, options, None, None):
-    logger.error("unable to get initial manifest")
+    logger.error("unable to execute initial manifest")
     os._exit(1)
 
 if options.daemonize:
@@ -148,8 +191,9 @@ def do_monitoring():
         send_report(manifest.get_report())
     logger.error("monitor dying")
 
-monitor = threading.Thread(target=do_monitoring)
-monitor.start()
+if manifest.get_delay() is not None:
+    monitor = threading.Thread(target=do_monitoring)
+    monitor.start()
 
 class AgentRequestHandler(napkin.api.BaseHTTPRequestHandler):
     server_version = "napkin/0.1"
@@ -188,7 +232,7 @@ server = napkin.api.SecureHTTPServer((options.bind_addr, options.bind_port),
                 cert_reqs=napkin.api.CERT_REQ)
 
 try:
-    server.serve_forever()
+    server.serve_forever(None)
 finally:
     manifest.stop_monitor()
     monitor.join()

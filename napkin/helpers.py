@@ -18,16 +18,35 @@
 
 import os
 import sys
-import subprocess
 import errno
 import logging
+import napkin.api
 
 logger = logging.getLogger("napkin.helpers")
 
 class FetchException(Exception):
-    def __init__(self, cmd, ret, msg):
-        Exception.__init__(self, "%s failed with %s" % (cmd[0], msg))
-        logger.debug("FetchException: %s, %s, %s" % (cmd, ret, msg))
+    def __init__(self, url, status, msg):
+        Exception.__init__(self, "%s failed with %d %s" % (url, status, msg))
+        logger.debug("FetchException: %s, %s, %s" % (url, status, msg))
+
+def get_connection(url, options):
+    up = napkin.api.urlparse(url)
+    if up.scheme == 'http':
+        c = napkin.api.HTTPConnection(up.netloc)
+    elif up.scheme == 'https':
+        kwargs = {}
+        if options:
+            if options.cacert and os.path.exists(options.cacert):
+                kwargs['ca_certs'] = options.cacert
+                kwargs['cert_reqs'] = napkin.api.CERT_REQ
+            if options.cert and os.path.exists(options.cert):
+                kwargs['certfile'] = options.cert
+                if options.key and os.path.exists(options.key):
+                    kwargs['keyfile'] = options.key
+        c = napkin.api.SecureHTTPConnection(up.netloc, **kwargs)
+    else:
+        raise TypeError("source %s uses unsupported scheme" % url)
+    return (up, c)
 
 def file_fetcher(url, writer, options=None):
     if url.startswith("/") or url.startswith("file://"):
@@ -40,53 +59,43 @@ def file_fetcher(url, writer, options=None):
                 break
             writer(buf)
         f.close()
-    elif url.startswith("http://") or url.startswith("https://") or url.startswith("ftp://"):
-        cmd = ["curl", "-s", "-S", "-L", "-f"]
-        if hasattr(options, 'cacert') and options.cacert:
-            cmd += ["--cacert", options.cacert]
-        if hasattr(options, 'cert') and options.cert:
-            cmd += ["--cert", options.cert]
-            if hasattr(options, 'key') and options.key:
-                cmd += ["--key", options.key]
-        cmd.append(url)
-        p = subprocess.Popen(cmd, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    elif url.startswith("http://") or url.startswith("https://"):
+        (up, c) = get_connection(url, options)
+        headers = {'Host': up.netloc}
+        c.request("GET", up.path, None, headers)
+        resp = c.getresponse()
+        if resp.status != 200:
+            raise FetchException(url, resp.status, resp.reason)
+        length = resp.getheader('Content-Length')
+        if length is None:
+            raise FetchException(url, resp.status, "no Content-Length")
         while True:
-            buf = p.stdout.readline(4096)
+            buf = resp.read(16384)
             if not buf:
                 break
             writer(buf)
-        stderr = ""
-        while True:
-            buf = p.stderr.readline(4096)
-            if not buf:
-                break
-            stderr += buf
-        ret = p.wait()
-        if ret != 0:
-            raise FetchException(cmd, ret, stderr)
     else:
         raise TypeError("source %s uses unknown scheme" % url)
 
 def file_sender(url, filename, mimetype=None, options=None):
-    if url.startswith("http://") or url.startswith("https://"):
-        cmd = ["curl", "-s", "-S", "-L", "-f", "--data-binary", "@%s" % filename]
-        if mimetype:
-            cmd += ["-H", "Content-Type: %s" % mimetype]
-        if options and options.cert:
-            cmd += ["--cert", options.cert]
-            if options.key:
-                cmd += ["--key", options.key]
-        if options and options.cacert:
-            cmd += ["--cacert", options.cacert]
-        cmd += [url]
-        p = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (stdout, stderr) = p.communicate()
-        if p.returncode != 0:
-            raise FetchException(cmd, ret, stderr)
-        elif stdout != "1\r\n":
-            raise FetchException(cmd, ret, stdout)
-    else:
-        raise TypeError("source %s uses unknown scheme" % url)
+    (up, c) = get_connection(url, options)
+    headers = {'Host': up.netloc}
+    if mimetype:
+        headers['Content-Type'] = mimetype
+    c.request("POST", up.path, open(filename, 'rb'), headers)
+    resp = c.getresponse()
+    if resp.status != 200:
+        raise FetchException(url, resp.status, resp.reason)
+    length = None
+    try:
+        length = int(resp.getheader('content-length', []))
+    except:
+        raise
+    if length is None:
+        raise FetchException(url, resp.status, "no Content-Length")
+    if length > 4096:
+        raise FetchException(url, resp.status, "Content-Length %s too big" % length)
+    return resp.read(length)
 
 def octal(v):
     if isinstance(v, int):
@@ -145,8 +154,8 @@ def files_differ(src, dst):
 def daemonize(logfile=None, pidfile=None):
     if logfile is None:
         logfile = "/dev/null"
-    stdout_log = open(logfile, 'a+', 0)
-    stderr_log = open(logfile, 'a+', 0)
+    stdout_log = open(logfile, 'a+')
+    stderr_log = open(logfile, 'a+')
     dev_null = open('/dev/null', 'r+')
 
     os.dup2(stderr_log.fileno(), 2)
