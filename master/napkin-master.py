@@ -102,6 +102,16 @@ def register(hostname, rfp, wfp, resp):
         data += ret.decode("utf-8")
     registration = napkin.api.deserialize(data)
     logger.debug("%s: %s", hostname, registration)
+    if ('hostname' not in registration or
+        'providers' not in registration or
+        'version' not in registration):
+        resp.send_error(400, "Invalid registration\r\n")
+        return
+    if hostname is None and registration['csr']:
+        logger.info("%s requesting certificate", registration['hostname'])
+        f = open(os.path.join(config['csrdir'], registration['hostname'] + ".csr"), 'w')
+        f.write(registration['csr'])
+        f.close()
     resp.send_response(200)
     resp.send_header("Content-Length", "3")
     resp.end_headers()
