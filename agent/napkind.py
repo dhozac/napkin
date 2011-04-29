@@ -135,7 +135,8 @@ if options.master:
     import napkin.providers
     import socket
     data = {'hostname': socket.gethostname(),
-            'providers': napkin.providers.providers}
+            'providers': napkin.providers.providers,
+            'version': 1}
     (fd, tmpname) = tempfile.mkstemp()
     os.close(fd)
     if options.tls:
