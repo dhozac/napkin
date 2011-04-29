@@ -34,6 +34,7 @@ import napkin.api
 
 parser = optparse.OptionParser(version="0.1")
 parser.add_option("-d", "--daemonize", action="store_true", dest="daemonize")
+parser.add_option("-D", "--confdir", action="store", dest="confdir", default="/etc/napkin")
 parser.add_option("-C", "--config", action="store", dest="conffile", default="/etc/napkin/napkind.conf")
 parser.add_option("-m", "--manifest", action="store", dest="manifest")
 parser.add_option("-r", "--report", action="store", dest="report")
@@ -66,7 +67,7 @@ def file_if_exists(fn):
         return None
 
 if not options.logconfig:
-    options.logconfig = "/etc/napkin/logging.conf"
+    options.logconfig = "%s/logging.conf" % options.confdir
 if not options.logfile:
     options.logfile = "/var/log/napkind"
 if not options.pidfile:
@@ -84,11 +85,11 @@ if not options.report and options.master:
 if not options.register and options.master:
     options.register = "https://%s:12201/napkin/register" % options.master
 if not options.cacert and options.tls:
-    options.cacert = "/etc/napkin/ca.crt"
+    options.cacert = "%s/ca.crt" % options.confdir
 if not options.cert and options.tls:
-    options.cert = "/etc/napkin/agent.crt"
+    options.cert = "%s/agent.crt" % options.confdir
 if not options.key and options.tls:
-    options.key = "/etc/napkin/agent.key"
+    options.key = "%s/agent.key" % options.confdir
 
 logging.config.fileConfig(options.logconfig)
 
