@@ -140,17 +140,25 @@ if options.master:
     os.close(fd)
     if options.tls:
         if not os.path.exists(options.cert):
-            if subprocess.call(["certtool", "--bits", "2048", "-p",
-                                "--outfile", options.key]) != 0:
-                logger.error("failed to generate private key")
-                os._exit(1)
-            if subprocess.call(["certtool", "--template", tmpname,
-                                "-q", "--load-privkey", options.key,
-                                "--outfile",
-                                options.cert.replace(".crt", ".csr")]) != 0:
-                logger.error("failed to generate csr")
-                os._exit(1)
-            data['csr'] = open(options.cert.replace(".crt", ".csr"), 'r').read()
+            if not os.path.exists(options.key):
+                if subprocess.call(["certtool", "--bits", "2048", "-p",
+                                    "--outfile", options.key]) != 0:
+                    logger.error("failed to generate private key")
+                    os._exit(1)
+            csrpath = options.cert.replace(".crt", ".csr")
+            if not os.path.exists(csrpath):
+                src = open(os.path.join(options.confdir, "template.ct"), 'r')
+                dst = open(tmpname, 'w')
+                for line in src:
+                    dst.write(line.replace("@HOSTNAME@", data['hostname']))
+                src.close()
+                dst.close()
+                if subprocess.call(["certtool", "--template", tmpname,
+                                    "-q", "--load-privkey", options.key,
+                                    "--outfile", csrpath]) != 0:
+                    logger.error("failed to generate csr")
+                    os._exit(1)
+            data['csr'] = open(csrpath, 'r').read()
     f = open(tmpname, 'w')
     napkin.api.serialize(data, f)
     f.close()
