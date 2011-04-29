@@ -22,9 +22,12 @@ install-lib:
 
 install-master: install-lib
 	mkdir -p $(DESTDIR)$(sbindir)
-	sed -e 's:^#!.*:#!$(PYTHON) -tt:' master/napkin-master.py > $(DESTDIR)$(sbindir)/napkin-master
-	touch -r master/napkin-master.py $(DESTDIR)$(sbindir)/napkin-master
-	chmod --reference=master/napkin-master.py $(DESTDIR)$(sbindir)/napkin-master
+	for i in master/napkin-master.py master/napkin-ca.py; do \
+		n=$${i##*/}; n=$${n%.py}; \
+		sed -e 's:^#!.*:#!$(PYTHON) -tt:' $$i > $(DESTDIR)$(sbindir)/$$n; \
+		touch -r $$i $(DESTDIR)$(sbindir)/$$n; \
+		chmod --reference=$$i $(DESTDIR)$(sbindir)/$$n; \
+	done
 	mkdir -m 0700 -p $(DESTDIR)$(pkgconfdir)
 	@for i in etc/master.conf; do \
 		if test ! -e $(DESTDIR)$(pkgconfdir)/`basename $$i`; then \
