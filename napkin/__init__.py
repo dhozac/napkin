@@ -270,21 +270,18 @@ class manifest:
         self.clear_monitor()
         self.monitors = []
 
-    def read(self, filename):
+    def read(self, filename, reqprov=None):
         st = os.stat(filename)
         if self.mtime is not None and self.mtime < st.st_mtime:
             return
         import napkin.providers
-        import napkin.filters
+        napkin.providers.load(reqprov)
         self.get_wlock()
         self.clear()
         d = {}
         for i in dir(napkin.providers):
-            if i.startswith("t_") or i.startswith("m_"):
+            if i.startswith("t_") or i.startswith("m_") or i.startswith("f_"):
                 d[i] = getattr(napkin.providers, i)
-        for i in dir(napkin.filters):
-            if i.startswith("f_"):
-                d[i] = getattr(napkin.filters, i)
         threadlocals.manifest = self
         helpers.execfile(filename, d, d)
         self.mtime = st.st_mtime

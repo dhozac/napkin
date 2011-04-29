@@ -134,6 +134,7 @@ def send_report(report_data):
 if options.master:
     import napkin.providers
     import socket
+    napkin.providers.load()
     data = {'hostname': socket.gethostname(),
             'providers': napkin.providers.providers,
             'version': 1}
