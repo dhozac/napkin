@@ -22,7 +22,7 @@ install-lib:
 
 install-master: install-lib
 	mkdir -p $(DESTDIR)$(sbindir)
-	for i in master/napkin-master.py master/napkin-ca.py; do \
+	for i in master/napkin-master.py master/napkin-ca.py master/napkin-run.py; do \
 		n=$${i##*/}; n=$${n%.py}; \
 		sed -e 's:^#!.*:#!$(PYTHON) -tt:' $$i > $(DESTDIR)$(sbindir)/$$n; \
 		touch -r $$i $(DESTDIR)$(sbindir)/$$n; \
