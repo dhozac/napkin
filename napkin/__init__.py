@@ -103,6 +103,7 @@ class manifest:
         self.wlock = threading.RLock()
         self.rlock = threading.RLock()
         self.has_wlock = False
+        self.mtime = None
 
     def add(self, obj):
         k = resource_ref(obj)
@@ -270,6 +271,9 @@ class manifest:
         self.monitors = []
 
     def read(self, filename):
+        st = os.stat(filename)
+        if self.mtime is not None and self.mtime < st.st_mtime:
+            return
         import napkin.providers
         import napkin.filters
         self.get_wlock()
@@ -283,6 +287,7 @@ class manifest:
                 d[i] = getattr(napkin.filters, i)
         threadlocals.manifest = self
         helpers.execfile(filename, d, d)
+        self.mtime = st.st_mtime
         self.unlock()
 
     def get_rlock(self):
