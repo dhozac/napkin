@@ -65,12 +65,12 @@ def create_manifest(hostname, rfp, wfp, resp):
         return
     manifest = napkin.manifest()
     manifest.read(os.path.join(config['manifestdir'], hostname))
-    r = repr(manifest)
+    r = repr(manifest).encode("utf-8")
     resp.send_response(200)
     resp.send_header("Content-Type", "application/x-napkin-manifest")
     resp.send_header("Content-Length", "%d" % len(r))
     resp.end_headers()
-    wfp.write(r.encode("utf-8"))
+    wfp.write(r)
 
 def send_file(hostname, path, rfp, wfp, resp):
     if hostname is None:
