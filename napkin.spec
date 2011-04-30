@@ -71,6 +71,7 @@ rm -rf "%{buildroot}"
 %defattr(-,root,root,-)
 %doc COPYING
 %dir %{_sysconfdir}/napkin
+%config(noreplace) %{_sysconfdir}/*-template.ct
 %config(noreplace) %{_sysconfdir}/napkin/logging.conf
 %{python_sitelib}/napkin
 
@@ -79,6 +80,8 @@ rm -rf "%{buildroot}"
 %config(noreplace) %{_sysconfdir}/napkin/master.conf
 %{_initrddir}/napkin-master
 %{_sbindir}/napkin-master
+%{_sbindir}/napkin-run
+%{_sbindir}/napkin-ca
 
 %files client
 %defattr(-,root,root,-)
