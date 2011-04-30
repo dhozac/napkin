@@ -206,30 +206,36 @@ class AgentRequestHandler(napkin.api.BaseHTTPRequestHandler):
     server_version = "napkin/0.1"
     protocol_version = "HTTP/1.0"
     def do_GET(self):
-        hostname = None
-        for i in self.request.peercert['subject']:
-            if i[0][0] == 'commonName':
-                hostname = i[0][1]
-        if hostname != options.master:
-            logger.warning("Request for %s from %s not from configured master %s", self.path, hostname, config['master'])
-            self.send_error(401)
-            self.wfile.write("Request not from configured master!")
-            return
-        if self.path == "/run":
-            result = do_run(manifest, options, None, None)
-        else:
-            logger.warning("Unknown request for %s", self.path)
-            self.send_error(404)
-            self.wfile.write("Unknown request %s" % self.path)
-            return
-        self.send_response(200)
-        self.send_header("Content-Type", "text/plain")
-        self.send_header("Content-Length", "3")
-        self.end_headers()
-        if result:
-            self.wfile.write("1\r\n")
-        else:
-            self.wfile.write("0\r\n")
+        try:
+            hostname = None
+            for i in self.request.peercert['subject']:
+                if i[0][0] == 'commonName':
+                    hostname = i[0][1]
+            if hostname != options.master:
+                logger.warning("Request for %s from %s not from configured master %s", self.path, hostname, options.master)
+                self.send_error(401)
+                return
+            if self.path == "/run":
+                try:
+                    result = do_run(manifest, options, None, None)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/plain")
+                    self.send_header("Content-Length", "3")
+                    self.end_headers()
+                    if result:
+                        self.wfile.write("1\r\n".encode("utf-8"))
+                    else:
+                        self.wfile.write("0\r\n".encode("utf-8"))
+                except:
+                    logger.exception("handling run request failed")
+                    self.send_error(500)
+            else:
+                logger.warning("Unknown request for %s", self.path)
+                self.send_error(404)
+                return
+        except:
+            logger.exception("GET handler failed")
+            self.send_error(500)
 
 server = napkin.api.SecureHTTPServer((options.bind_addr, options.bind_port),
             AgentRequestHandler,

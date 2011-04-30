@@ -67,9 +67,13 @@ class SecureHTTPServer(HTTPServer):
         HTTPServer.__init__(self, *args, **kwargs)
     def get_request(self):
         conn, addr = self.socket.accept()
-        sconn = ssl_wrap_socket(conn, **self.ssl_wrap_args)
-        sconn.peercert = sconn.getpeercert()
-        return (sconn, addr)
+        try:
+            sconn = ssl_wrap_socket(conn, **self.ssl_wrap_args)
+            sconn.peercert = sconn.getpeercert()
+            return (sconn, addr)
+        except:
+            logger.exception("SSL setup failed")
+            return None
 
 class SecureHTTPConnection(HTTPConnection):
     def __init__(self, *args, **kwargs):
