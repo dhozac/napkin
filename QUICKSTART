@@ -1,26 +1,23 @@
- 1. Install Python (preferably a recent one, but 2.4+ should work), curl
-    and simplejson (if you're on an older Python)
+ 1. Install Python (preferably a recent one, but 2.4+ should work),
+    simplejson (if you're on an older Python), and GNU TLS.
 
  2. Install napkin with
     make install
 
- 3. Get the easy-rsa suite from OpenVPN and configure it
+ 3. Create a CA with
+    napkin-ca --create
 
  4. Generate a master certificate with
-    ./pkitool --server <server hostname>
+    napkin-ca --create-master
 
- 5. Put the master certificate in /etc/napkin/master.{crt,key}
+ 5. Start napkin-master
 
- 6. Generate agent certificates for all clients with
-    ./pkitool <hostname>
-
- 7. Put agent's certificates in /etc/napkin/agent.{crt,key}
-
- 8. Start napkin-master using the initscript or the command
-
- 9. Create manifests for your hosts in /var/lib/napkin/master/manifests/<hostname>
-
-10. Set the master in /etc/sysconfig/napkind like
+ 6. Set the master in /etc/sysconfig/napkind like
     NAPKIND_ARGS="--master napkin.example.com"
 
-11. Start napkind using the initscript
+ 7. Start napkind on clients
+
+ 8. Create manifests for your hosts in /var/lib/napkin/master/manifests/<hostname>
+
+ 9. Sign the agent certificates with
+    napkin-ca --sign
