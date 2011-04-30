@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 
 providers = []
 
@@ -25,21 +26,24 @@ def load(reqprov=None):
         return
     if reqprov is None:
         if os.name == 'posix':
-            from napkin.providers.posix import *
+            import napkin.providers.posix
             providers.append('posix')
 
         if os.uname()[0] == 'Linux':
-            from napkin.providers.linux import *
+            import napkin.providers.linux
             providers.append('linux')
 
         if (os.path.exists("/etc/fedora-release") or
             os.path.exists("/etc/redhat-release") or
             os.path.exists("/etc/centos-release")):
-            from napkin.providers.redhat import *
+            import napkin.providers.redhat
             providers.append('redhat')
     else:
         for i in reqprov:
-            m = __import__("napkin.providers.%s" % i, globals(), locals(), ['*'], -1)
-            for j in dir(m):
-                globals()[j] = getattr(m, j)
+            m = __import__("napkin.providers.%s" % i, globals(), locals(), [], -1)
             providers.append(i)
+
+    for i in providers:
+        m = sys.modules["napkin.providers.%s" % i]
+        for j in dir(m):
+            globals()[j] = getattr(m, j)
