@@ -117,6 +117,31 @@ def register(hostname, rfp, wfp, resp):
     resp.end_headers()
     wfp.write("1\r\n".encode("utf-8"))
 
+def get_certificate(hostname, rfp, wfp, resp, qs):
+    if not qs.startswith("hostname="):
+        resp.send_error(400, "Invalid query string specified: %s\r\n" % qs)
+        logger.debug("invalid query string: %s", qs)
+    hostname = qs[9:]
+    filename = os.path.join(config['csrdir'], hostname + ".crt")
+    if os.path.exists(filename):
+        cst = os.stat(filename)
+        ast = os.stat(config['cacert'])
+        length = cst.st_size + 15 + ast.st_size
+        resp.send_response(200)
+        resp.send_header("Content-Length", length)
+        resp.end_headers()
+        f = open(config['cacert'], 'rb')
+        shutil.copyfileobj(f, wfp)
+        f.close()
+        wfp.write("\r\n---split---\r\n".encode("utf-8"))
+        f = open(filename, 'rb')
+        shutil.copyfileobj(f, wfp)
+        f.close()
+        logger.info("sent certificate to %s", hostname)
+    else:
+        logger.debug("%s waiting on certificate", hostname)
+        resp.send_error(404, "No such certificate yet\r\n")
+
 if 'GATEWAY_INTERFACE' in os.environ:
     class Wrapper:
         def __init__(self):
@@ -149,6 +174,8 @@ if 'GATEWAY_INTERFACE' in os.environ:
         process_report(hostname, sys.stdin, sys.stdout, resp)
     elif os.environ['SCRIPT_NAME'].endswith("/manifest"):
         create_manifest(hostname, sys.stdin, sys.stdout, resp)
+    elif os.environ['SCRIPT_NAME'].endswith("/cert"):
+        get_certificate(hostname, sys.stdin, sys.stdout, resp, os.environ['QUERY_STRING'])
     elif '/files/' in os.environ['SCRIPT_NAME']:
         send_file(hostname, os.environ['SCRIPT_NAME'], sys.stdin, sys.stdout, resp)
     else:
@@ -180,6 +207,8 @@ else:
                     self.path = self.path[7:]
                 if self.path == "/manifest":
                     create_manifest(hostname, self.rfile, self.wfile, self)
+                elif self.path.startswith("/cert?hostname="):
+                    get_certificate(hostname, self.rfile, self.wfile, self, self.path[6:])
                 elif self.path.startswith("/files/"):
                     send_file(hostname, self.path, self.rfile, self.wfile, self)
                 else:

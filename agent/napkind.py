@@ -36,9 +36,6 @@ parser = optparse.OptionParser(version="0.1")
 parser.add_option("-d", "--daemonize", action="store_true", dest="daemonize")
 parser.add_option("-D", "--confdir", action="store", dest="confdir", default="/etc/napkin")
 parser.add_option("-C", "--config", action="store", dest="conffile", default="/etc/napkin/napkind.conf")
-parser.add_option("-m", "--manifest", action="store", dest="manifest")
-parser.add_option("-r", "--report", action="store", dest="report")
-parser.add_option("-R", "--register", action="store", dest="register")
 parser.add_option("-l", "--logconfig", action="store", dest="logconfig")
 parser.add_option("-L", "--logfile", action="store", dest="logfile")
 parser.add_option("-p", "--pidfile", action="store", dest="pidfile")
@@ -49,6 +46,10 @@ parser.add_option("-c", "--cert", action="store", dest="cert")
 parser.add_option("-k", "--key", action="store", dest="key")
 parser.add_option("-a", "--cacert", action="store", dest="cacert")
 parser.add_option("-M", "--master", action="store", dest="master")
+parser.add_option("-m", "--manifest", action="store", dest="manifest")
+parser.add_option("-r", "--report", action="store", dest="report")
+parser.add_option("-R", "--register", action="store", dest="register")
+parser.add_option("-g", "--getcert", action="store", dest="getcert")
 parser.add_option("-T", "--no-tls", action="store_false", dest="tls", default=True)
 (options, args) = parser.parse_args(sys.argv[1:])
 
@@ -56,7 +57,7 @@ if options.conffile and os.path.exists(options.conffile):
     d = {}
     napkin.helpers.execfile(options.conffile, d, d)
     for i in d:
-        if getattr(options, i) is None:
+        if hasattr(options, i) and getattr(options, i) is None:
             setattr(options, i, d[i])
     del d
 
@@ -84,6 +85,8 @@ if not options.report and options.master:
     options.report = "https://%s:12201/napkin/report" % options.master
 if not options.register and options.master:
     options.register = "https://%s:12201/napkin/register" % options.master
+if not options.getcert and options.master:
+    options.getcert = "https://%s:12201/napkin/cert" % options.master
 if not options.cacert and options.tls:
     options.cacert = "%s/ca.crt" % options.confdir
 if not options.cert and options.tls:
@@ -175,7 +178,22 @@ if options.master:
     if 'csr' in data:
         logger.warning("waiting for cert...")
         while True:
-            time.sleep(60)
+            try:
+                contents = ""
+                def append_to_contents(x):
+                    global contents
+                    contents += x.decode("utf-8")
+                napkin.helpers.file_fetcher(options.getcert + "?hostname=" + data['hostname'],
+                                            append_to_contents,
+                                            options)
+                (ca, cert) = contents.split("\r\n---split---\r\n")
+                open(options.cacert, 'w').write(ca)
+                open(options.cert, 'w').write(cert)
+                break
+            except napkin.helpers.FetchException:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception("failed to get certificate")
+            time.sleep(300)
 
 manifest = napkin.manifest()
 

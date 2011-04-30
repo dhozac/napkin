@@ -48,6 +48,12 @@ def get_connection(url, options):
         raise TypeError("source %s uses unsupported scheme" % url)
     return (up, c)
 
+def mkreq(up):
+    ret = up.path
+    if up.query:
+        ret += "?" + up.query
+    return ret
+
 def file_fetcher(url, writer, options=None):
     if url.startswith("/") or url.startswith("file://"):
         if url.startswith("file://"):
@@ -62,7 +68,7 @@ def file_fetcher(url, writer, options=None):
     elif url.startswith("http://") or url.startswith("https://"):
         (up, c) = get_connection(url, options)
         headers = {'Host': up.netloc}
-        c.request("GET", up.path, None, headers)
+        c.request("GET", mkreq(up), None, headers)
         resp = c.getresponse()
         if resp.status != 200:
             raise FetchException(url, resp.status, resp.reason)
@@ -82,7 +88,7 @@ def file_sender(url, filename, mimetype=None, options=None):
     headers = {'Host': up.netloc}
     if mimetype:
         headers['Content-Type'] = mimetype
-    c.request("POST", up.path, open(filename, 'rb'), headers)
+    c.request("POST", mkreq(up), open(filename, 'rb'), headers)
     resp = c.getresponse()
     if resp.status != 200:
         raise FetchException(url, resp.status, resp.reason)
