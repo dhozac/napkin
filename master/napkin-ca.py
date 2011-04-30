@@ -136,3 +136,6 @@ elif options.master:
             os._exit(1)
     os.unlink(tmpname)
     os.unlink(csr)
+else:
+    sys.stderr.write("%s: one of --sign, --create or --create-master is required\n" % sys.argv[0])
+    os._exit(1)
