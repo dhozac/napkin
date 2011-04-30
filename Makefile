@@ -29,7 +29,7 @@ install-master: install-lib
 		chmod --reference=$$i $(DESTDIR)$(sbindir)/$$n; \
 	done
 	mkdir -m 0700 -p $(DESTDIR)$(pkgconfdir)
-	@for i in etc/master.conf; do \
+	@for i in etc/master.conf etc/agent-template.ct etc/master-template.ct; do \
 		if test ! -e $(DESTDIR)$(pkgconfdir)/`basename $$i`; then \
 			echo install -p -m 644 $$i $(DESTDIR)$(pkgconfdir); \
 			install -p -m 644 $$i $(DESTDIR)$(pkgconfdir); \
@@ -43,7 +43,7 @@ install-agent: install-lib
 	touch -r agent/napkind.py $(DESTDIR)$(sbindir)/napkind
 	chmod --reference=agent/napkind.py $(DESTDIR)$(sbindir)/napkind
 	mkdir -m 0700 -p $(DESTDIR)$(pkgconfdir)
-	@for i in etc/logging.conf etc/template.ct; do \
+	@for i in etc/logging.conf etc/agent-template.ct; do \
 		if test ! -e $(DESTDIR)$(pkgconfdir)/`basename $$i`; then \
 			echo install -p -m 644 $$i $(DESTDIR)$(pkgconfdir); \
 			install -p -m 644 $$i $(DESTDIR)$(pkgconfdir); \
