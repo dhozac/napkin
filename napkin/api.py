@@ -73,7 +73,7 @@ class SecureHTTPServer(HTTPServer):
             return (sconn, addr)
         except:
             logger.exception("SSL setup failed")
-            return None
+            return (None, None)
 
 class SecureHTTPConnection(HTTPConnection):
     def __init__(self, *args, **kwargs):
