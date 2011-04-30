@@ -194,3 +194,13 @@ if sys.version_info[0] >= 3:
         exec(compile(open(f).read(), f, 'exec'), g, l)
 else:
     execfile = __builtins__['execfile']
+
+def replace_file(src, dst, replacements):
+    s = open(src, 'r')
+    d = open(dst, 'w')
+    for line in s: 
+        for i in replacements:
+            line = line.replace(i, replacements[i])
+        d.write(line)
+    s.close() 
+    d.close() 

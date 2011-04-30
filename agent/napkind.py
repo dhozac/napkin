@@ -150,12 +150,8 @@ if options.master:
                     os._exit(1)
             csrpath = options.cert.replace(".crt", ".csr")
             if not os.path.exists(csrpath):
-                src = open(os.path.join(options.confdir, "template.ct"), 'r')
-                dst = open(tmpname, 'w')
-                for line in src:
-                    dst.write(line.replace("@HOSTNAME@", data['hostname']))
-                src.close()
-                dst.close()
+                napkin.helpers.replace_file(os.path.join(options.confdir, "template.ct"),
+                                            tmpname, {'@HOSTNAME@': data['hostname']})
                 if subprocess.call(["certtool", "--template", tmpname,
                                     "-q", "--load-privkey", options.key,
                                     "--outfile", csrpath]) != 0:
