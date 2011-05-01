@@ -69,6 +69,7 @@ def create_manifest(hostname, rfp, wfp, resp):
     resp.send_response(200)
     resp.send_header("Content-Type", "application/x-napkin-manifest")
     resp.send_header("Content-Length", "%d" % len(r))
+    resp.send_header("Last-Modified", time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(manifest.mtime)))
     resp.end_headers()
     wfp.write(r)
 
@@ -84,6 +85,7 @@ def send_file(hostname, path, rfp, wfp, resp):
     resp.send_response(200)
     resp.send_header("Content-Length", "%d" % (st.st_size))
     resp.send_header("Content-Type", "application/x-napkin-file")
+    resp.send_header("Last-Modified", time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(st.st_mtime)))
     resp.end_headers()
     f = open(filename, 'rb')
     shutil.copyfileobj(f, wfp)
