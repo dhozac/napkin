@@ -24,6 +24,7 @@ import optparse
 import shutil
 import napkin.helpers
 import napkin.api
+import napkin.db
 
 config = {}
 napkin.helpers.execfile('/etc/napkin/master.conf', config, config)
@@ -37,6 +38,12 @@ del root_logger
 del formatter
 del log_handler
 logger = logging.getLogger("napkin.master")
+
+dbkwargs = {}
+for i in config:
+    if i.startswith("db"):
+        dbkwargs[i[2:]] = config[i]
+napkin.db.connect(**dbkwargs)
 
 def process_report(hostname, rfp, wfp, resp):
     if hostname is None:
@@ -54,22 +61,32 @@ def process_report(hostname, rfp, wfp, resp):
         data += ret.decode("utf-8")
     report = napkin.api.deserialize(data)
     logger.debug("%s: %s", hostname, report)
+    cur = napkin.db.cursor()
+    cur.execute("UPDATE agents SET last_report = %d WHERE hostname = '%s'" % (time.time(), hostname))
     resp.send_response(200)
     resp.send_header("Content-Length", "3")
     resp.end_headers()
     wfp.write("1\r\n".encode("utf-8"))
 
+manifests = {}
 def create_manifest(hostname, rfp, wfp, resp):
+    global manifests
     if hostname is None:
         resp.send_error(400, "No common name found in certificate!\r\n")
         return
-    manifest = napkin.manifest()
-    manifest.read(os.path.join(config['manifestdir'], hostname))
-    r = repr(manifest).encode("utf-8")
+    if hostname not in manifests:
+        manifests[hostname] = napkin.manifest()
+    providers = []
+    cur = napkin.db.cursor()
+    cur.execute("SELECT p.provider FROM providers AS p, agents AS a WHERE a.aid = p.aid AND a.hostname = '%s'" % hostname)
+    for i in cur:
+        providers.append(i[0])
+    manifests[hostname].read(os.path.join(config['manifestdir'], hostname), providers)
+    r = repr(manifests[hostname]).encode("utf-8")
     resp.send_response(200)
     resp.send_header("Content-Type", "application/x-napkin-manifest")
     resp.send_header("Content-Length", "%d" % len(r))
-    resp.send_header("Last-Modified", time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(manifest.mtime)))
+    resp.send_header("Last-Modified", time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(manifests[hostname].mtime)))
     resp.end_headers()
     wfp.write(r)
 
@@ -109,11 +126,33 @@ def register(hostname, rfp, wfp, resp):
         'version' not in registration):
         resp.send_error(400, "Invalid registration\r\n")
         return
+    if hostname is not None and registration['hostname'] != hostname:
+        logger.warning("%s registered as %s", hostname, registration['hostname'])
+        resp.send_error(401, "Attempt to register as different hostname\r\n")
+        return
     if hostname is None and registration['csr']:
         logger.info("%s requesting certificate", registration['hostname'])
         f = open(os.path.join(config['csrdir'], registration['hostname'] + ".csr"), 'w')
         f.write(registration['csr'])
         f.close()
+    elif hostname is None:
+        logger.warning("%s has no certificate, and didn't request one", registration['hostname'])
+    cur = napkin.db.cursor()
+    cur.execute("SELECT aid FROM agents WHERE hostname = '%s'" % registration['hostname'])
+    row = cur.fetchone()
+    if row is None:
+        cur.execute("INSERT INTO agents (aid, hostname, last_report) VALUES (NULL, '%s', %d)" % (hostname, time.time()))
+        napkin.db.commit()
+        # FIXME
+        cur.execute("SELECT aid FROM agents WHERE hostname = '%s'" % registration['hostname'])
+        row = cur.fetchone()
+    else:
+        cur.execute("UPDATE agents SET last_report = %d WHERE aid = %d" % (time.time(), row[0]))
+    aid = row[0]
+    cur.execute("DELETE FROM providers WHERE aid = %d" % aid)
+    for i in registration['providers']:
+        cur.execute("INSERT INTO providers VALUES (%d, '%s')" % (aid, i))
+    napkin.db.commit()
     resp.send_response(200)
     resp.send_header("Content-Length", "3")
     resp.end_headers()
