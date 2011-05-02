@@ -39,11 +39,7 @@ del formatter
 del log_handler
 logger = logging.getLogger("napkin.master")
 
-dbkwargs = {}
-for i in config:
-    if i.startswith("db"):
-        dbkwargs[i[2:]] = config[i]
-napkin.db.connect(**dbkwargs)
+napkin.db.connect(config)
 
 def process_report(hostname, rfp, wfp, resp):
     if hostname is None:

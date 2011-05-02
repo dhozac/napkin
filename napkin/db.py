@@ -22,13 +22,20 @@ logger = logging.getLogger("napkin.db")
 
 conn = None
 
-def connect(**kwargs):
+def _connect(**kwargs):
     global conn
     lib = kwargs['provider']
     del kwargs['provider']
     x = __import__(lib, globals(), globals(), [], -1)
     conn = x.connect(**kwargs)
     return conn
+
+def connect(config):
+    dbkwargs = {}
+    for i in config:
+        if i.startswith("db"):
+            dbkwargs[i[2:]] = config[i]
+    return _connect(**dbkwargs)
 
 def cursor():
     return conn.cursor()
