@@ -21,6 +21,7 @@ import sys
 import logging
 import optparse
 import napkin.helpers
+import napkin.db
 
 config = {}
 napkin.helpers.execfile('/etc/napkin/master.conf', config, config)
@@ -41,6 +42,20 @@ class opts:
     key = config['key']
 options = opts()
 
-for i in sys.argv[1:]:
+if sys.argv[1] == "-a":
+    hosts = []
+    napkin.db.connect(config)
+    cur = napkin.db.cursor()
+    cur.execute("SELECT hostname FROM agents")
+    for i in cur:
+        hosts.append(i[0])
+    napkin.db.close()
+else:
+    hosts = sys.argv[1:]
+
+for i in hosts:
     sys.stdout.write("%s: " % i)
-    napkin.helpers.file_fetcher("https://%s:12200/run" % i, lambda x: sys.stdout.write(x.decode("utf-8")), options)
+    try:
+        napkin.helpers.file_fetcher("https://%s:12200/run" % i, lambda x: sys.stdout.write(x.decode("utf-8")), options)
+    except:
+        sys.stdout.write("0\n")
