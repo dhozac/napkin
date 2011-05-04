@@ -66,7 +66,6 @@ def process_report(hostname, rfp, wfp, resp):
 
 manifests = {}
 def create_manifest(hostname, rfp, wfp, resp):
-    global manifests
     if hostname is None:
         resp.send_error(400, "No common name found in certificate!\r\n")
         return
