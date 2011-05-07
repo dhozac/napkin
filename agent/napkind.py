@@ -120,6 +120,7 @@ def do_run(manifest, options, conn, addr):
     logger.debug("executed manifest =\n%s", manifest)
     return True
 
+reports = []
 def send_report(report_data):
     if not options.report:
         return
@@ -128,12 +129,18 @@ def send_report(report_data):
     (fd, tmpname) = tempfile.mkstemp()
     os.write(fd, napkin.api.serialize(report_data))
     os.close(fd)
+    reports.append(tmpname)
     try:
-        napkin.helpers.file_sender(options.report, tmpname, "application/x-napkin-report", options)
+        removed = []
+        for i in reports:
+            napkin.helpers.file_sender(options.report, i, "application/x-napkin-report", options)
+            os.unlink(i)
+            removed.append(i)
+        for i in removed:
+            reports.remove(i)
     except:
         e = sys.exc_info()[1]
         logger.error("sending report failed: %s", e)
-    os.unlink(tmpname)
 
 if options.master:
     import napkin.providers
