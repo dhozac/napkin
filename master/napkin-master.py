@@ -73,10 +73,14 @@ def create_manifest(hostname, rfp, wfp, resp):
         manifests[hostname] = napkin.manifest()
     providers = []
     cur = napkin.db.cursor()
-    cur.execute("SELECT p.provider FROM providers AS p, agents AS a WHERE a.aid = p.aid AND a.hostname = '%s'" % hostname)
+    cur.execute("SELECT p.provider FROM providers AS p, agents AS a WHERE " +
+                "a.aid = p.aid AND a.hostname = '%s'" % hostname)
     for i in cur:
         providers.append(i[0])
-    manifests[hostname].read(os.path.join(config['manifestdir'], hostname), providers)
+    for path in [os.path.join(config['manifestdir'], 'common'),
+                 os.path.join(config['manifestdir'], hostname)]:
+        if os.path.exists(path):
+            manifests[hostname].read(path, providers)
     r = repr(manifests[hostname]).encode("utf-8")
     resp.send_response(200)
     resp.send_header("Content-Type", "application/x-napkin-manifest")
