@@ -77,8 +77,8 @@ def create_manifest(hostname, rfp, wfp, resp):
                 "a.aid = p.aid AND a.hostname = '%s'" % hostname)
     for i in cur:
         providers.append(i[0])
-    for path in [os.path.join(config['manifestdir'], 'common'),
-                 os.path.join(config['manifestdir'], hostname)]:
+    for path in (os.path.join(config['manifestdir'], 'common'),
+                 os.path.join(config['manifestdir'], hostname)):
         if os.path.exists(path):
             manifests[hostname].read(path, providers, hostname)
     r = repr(manifests[hostname]).encode("utf-8")
@@ -93,8 +93,14 @@ def send_file(hostname, path, rfp, wfp, resp):
     if hostname is None:
         resp.send_error(400, "No common name found in certificate!\r\n")
         return
-    filename = config['filesdir'] + path[path.index('/files/') + 6:]
-    if not os.path.exists(filename) or not os.path.isfile(filename):
+    filename = None
+    name = path[path.index('/files/') + 6:]
+    for p in (os.path.join(config['filesdir'], hostname), config['filesdir']):
+        f = os.path.join(p, name)
+        if os.path.exists(f):
+            filename = f
+            break
+    if filename is None or not os.path.isfile(filename):
         resp.send_error(404, "No such file could be found!\r\n")
         return
     st = os.stat(filename)
