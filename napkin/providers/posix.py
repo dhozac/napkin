@@ -89,7 +89,6 @@ class t_file(napkin.resource):
         else:
             os.unlink(self.tmpname)
             self.success = True
-            return "%s unmodified" % self.dest
     def ensure_absent(self):
         if os.path.lexists(self.dest):
             os.unlink(self.dest)
@@ -147,3 +146,44 @@ class t_exec(napkin.resource):
         else:
             self.success = True
             return stdout
+
+class t_link(napkin.resource):
+    properties = {
+        'dest': {'required': True},
+        'symbolic': {'default': True},
+        'owner': {},
+        'group': {},
+    }
+    def ensure_present(self):
+        if os.path.lexists(self.name):
+            try:
+                if self.symbolic:
+                    curdest = os.readlink(self.name)
+                    if curdest != self.dest:
+                        os.unlink(self.name)
+                else:
+                    st_d = os.lstat(self.dest)
+                    st_s = os.lstat(self.name)
+                    if (st_d.st_ino != st_s.st_ino or
+                        st_d.st_dev != st_s.st_dev):
+                        os.unlink(self.name)
+            except:
+                os.unlink(self.name)
+        if os.path.lexists(self.name):
+            self.success = True
+        else:
+            if self.symbolic:
+                os.symlink(self.dest, self.name)
+            else:
+                os.link(self.dest, self.name)
+            self.success = True
+            self.notify_subscribers('create')
+            return "%s created" % self.name
+    def ensure_absent(self):
+        if os.path.lexists(self.name):
+            os.unlink(self.name)
+            self.notify_subscribers('remove')
+            self.success = True
+            return "%s removed" % self.name
+        else:
+            self.success = True
