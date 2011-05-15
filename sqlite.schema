@@ -1,0 +1,2 @@
+CREATE TABLE providers (aid int, provider varchar(255) NOT NULL);
+CREATE TABLE agents (aid INTEGER PRIMARY KEY NOT NULL, hostname varchar(255) NOT NULL, deleted int DEFAULT 0, last_report int DEFAULT 0);
