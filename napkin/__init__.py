@@ -274,7 +274,7 @@ class manifest:
         self.clear_monitor()
         self.monitors = []
 
-    def read(self, filename, reqprov=None):
+    def read(self, filename, reqprov=None, hostname=None):
         st = os.stat(filename)
         if self.mtime is not None and self.mtime < st.st_mtime:
             return
@@ -282,7 +282,10 @@ class manifest:
         napkin.providers.load(reqprov)
         self.get_wlock()
         self.clear()
-        d = {}
+        if hostname is None:
+            import socket
+            hostname = socket.gethostname()
+        d = {'providers': reqprov, 'hostname': hostname}
         for i in dir(napkin.providers):
             if i.startswith("t_") or i.startswith("m_") or i.startswith("f_"):
                 d[i] = getattr(napkin.providers, i)

@@ -80,7 +80,7 @@ def create_manifest(hostname, rfp, wfp, resp):
     for path in [os.path.join(config['manifestdir'], 'common'),
                  os.path.join(config['manifestdir'], hostname)]:
         if os.path.exists(path):
-            manifests[hostname].read(path, providers)
+            manifests[hostname].read(path, providers, hostname)
     r = repr(manifests[hostname]).encode("utf-8")
     resp.send_response(200)
     resp.send_header("Content-Type", "application/x-napkin-manifest")
