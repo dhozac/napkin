@@ -164,7 +164,8 @@ if options.master:
             csrpath = options.cert.replace(".crt", ".csr")
             if not os.path.exists(csrpath):
                 napkin.helpers.replace_file(os.path.join(options.confdir, "agent-template.ct"),
-                                            tmpname, {'@HOSTNAME@': data['hostname']})
+                                            tmpname, {'@HOSTNAME@': data['hostname'],
+                                                      '@SERIAL@': 0})
                 if subprocess.call(["certtool", "--template", tmpname,
                                     "-q", "--load-privkey", options.key,
                                     "--outfile", csrpath]) != 0:

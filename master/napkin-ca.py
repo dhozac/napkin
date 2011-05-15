@@ -23,6 +23,7 @@ import optparse
 import subprocess
 import tempfile
 import socket
+import napkin.db
 import napkin.helpers
 
 config = {}
@@ -50,6 +51,8 @@ if options.sign:
     files = os.listdir(config['csrdir'])
     (fd, tmpname) = tempfile.mkstemp()
     os.close(fd)
+    napkin.db.connect(config)
+    cur = napkin.db.cursor()
     for i in files:
         if i.startswith(".") or not i.endswith(".csr"):
             continue
@@ -57,8 +60,15 @@ if options.sign:
         hostname = i.replace(".csr", "")
         crt = csr.replace(".csr", ".crt")
         try:
+            cur.execute("SELECT aid FROM agents WHERE hostname = '%s'" % hostname)
+            serial = cur.fetchone()
+            if serial is None:
+                logger.error("unable to find %s in database", hostname)
+                continue
+            else:
+                serial = serial[0] + 2
             napkin.helpers.replace_file(os.path.join(config['confdir'], "agent-template.ct"),
-                                        tmpname, {"@HOSTNAME@": hostname})
+                                        tmpname, {"@HOSTNAME@": hostname, "@SERIAL@": serial[0]})
             cmd = ["certtool", "--generate-certificate",
                    "--outfile", crt, "--load-request", csr,
                    "--load-ca-certificate", config['cacert'],
@@ -75,6 +85,7 @@ if options.sign:
                 pass
             logger.error("failed to generate certificate for %s: %s", hostname, sys.exc_info()[1])
     os.unlink(tmpname)
+    napkin.db.close()
 elif options.create:
     if not os.path.exists(config['cakey']):
         cmd = ["certtool", "--bits", "2048", "--generate-privkey",

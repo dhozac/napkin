@@ -34,7 +34,7 @@ cn = "@HOSTNAME@"
 # pkcs9_email = "none@none.org"
 
 # The serial number of the certificate
-#serial = 001
+serial = @SERIAL@
 
 # In how many days, counting from today, this certificate will expire.
 expiration_days = 3650
