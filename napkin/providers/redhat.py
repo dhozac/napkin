@@ -49,8 +49,8 @@ class t_package(napkin.resource):
         'version': {},
     }
     def ensure_present(self):
-        ret = subprocess.call(["yum", "-y", "-d", "1", "install", self.name])
+        ret = subprocess.call(["yum", "-y", "-d", "0", "install", self.name])
         self.success = ret == 0
     def ensure_absent(self):
-        ret = subprocess.call(["yum", "-y", "-d", "1", "remove", self.name])
+        ret = subprocess.call(["yum", "-y", "-d", "0", "remove", self.name])
         self.success = ret == 0
