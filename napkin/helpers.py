@@ -55,6 +55,9 @@ def mkreq(up):
     return ret
 
 def file_fetcher(url, writer, options=None):
+    if '://' not in url and not url.startswith("/") and options.basefiles:
+        url = "%s/%s" % (options.basefiles, url)
+
     if url.startswith("/") or url.startswith("file://"):
         if url.startswith("file://"):
             url = url[7:]

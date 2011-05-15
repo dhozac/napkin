@@ -50,6 +50,7 @@ parser.add_option("-m", "--manifest", action="store", dest="manifest")
 parser.add_option("-r", "--report", action="store", dest="report")
 parser.add_option("-R", "--register", action="store", dest="register")
 parser.add_option("-g", "--getcert", action="store", dest="getcert")
+parser.add_option("--basefiles", action="store", dest="basefiles")
 parser.add_option("-T", "--no-tls", action="store_false", dest="tls", default=True)
 (options, args) = parser.parse_args(sys.argv[1:])
 
@@ -87,6 +88,8 @@ if not options.register and options.master:
     options.register = "https://%s:12201/napkin/register" % options.master
 if not options.getcert and options.master:
     options.getcert = "https://%s:12201/napkin/cert" % options.master
+if not options.basefiles and options.master:
+    options.basefiles = "https://%s:12201/napkin/files" % options.master
 if not options.cacert and options.tls:
     options.cacert = "%s/ca.crt" % options.confdir
 if not options.cert and options.tls:
@@ -116,7 +119,7 @@ def do_run(manifest, options, conn, addr):
         if not os.path.exists(os.path.join(options.statedir, "napkin.conf")):
             return False
     manifest.read(os.path.join(options.statedir, "napkin.conf"))
-    manifest.run()
+    manifest.run(options)
     logger.debug("executed manifest =\n%s", manifest)
     return True
 

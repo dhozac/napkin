@@ -150,8 +150,12 @@ class manifest:
         for i in self.order:
             yield self.resources[i]
 
-    def run(self):
+    def fetch(self, url, writer):
+        helpers.file_fetcher(url, writer, self.options)
+
+    def run(self, options=None):
         self.get_rlock()
+        self.options = options
         for i in self:
             r = i.pre()
             if r:

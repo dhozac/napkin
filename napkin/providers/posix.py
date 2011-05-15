@@ -54,7 +54,7 @@ class t_file(napkin.resource):
         if hasattr(self, "content"):
             self.write(f, self.content.encode(self.encoding))
         elif hasattr(self, "source"):
-            napkin.helpers.file_fetcher(self.source, lambda x: self.write(f, x))
+            self.manifest.fetch(self.source, lambda x: self.write(f, x))
         f.close()
         os.chmod(self.tmpname, self.mode)
         if hasattr(self, 'owner') or hasattr(self, 'group'):
