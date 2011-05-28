@@ -46,11 +46,18 @@ class t_service(napkin.resource):
 
 class t_package(napkin.resource):
     properties = {
+        'packages': {'type': [str]},
         'version': {},
     }
     def ensure_present(self):
-        ret = subprocess.call(["yum", "-y", "-d", "0", "install", self.name])
+        if hasattr(self, 'packages'):
+            ret = subprocess.call(["yum", "-y", "-d", "0", "install"] + self.packages)
+        else:
+            ret = subprocess.call(["yum", "-y", "-d", "0", "install", self.name])
         self.success = ret == 0
     def ensure_absent(self):
-        ret = subprocess.call(["yum", "-y", "-d", "0", "remove", self.name])
+        if hasattr(self, 'packages'):
+            ret = subprocess.call(["yum", "-y", "-d", "0", "install"] + self.packages)
+        else:
+            ret = subprocess.call(["yum", "-y", "-d", "0", "remove", self.name])
         self.success = ret == 0
