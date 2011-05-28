@@ -332,7 +332,7 @@ class resource:
             if len(t) == 0:
                 t[0] = str
             for i in v:
-                nv.append(self.convert_value(t[0], i))
+                nv.append(self.convert_value(t[0], i, tuple()))
         elif isinstance(v, t):
             return v
         elif t == bool:
