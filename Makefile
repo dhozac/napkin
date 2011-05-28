@@ -2,14 +2,14 @@ PYTHON := /usr/bin/python
 
 VERSION := 0.1
 
-prefix := /usr
-sysconfdir := $(prefix)/etc
-pkgconfdir := $(sysconfdir)/napkin
-sbindir := $(prefix)/sbin
-localstatedir := $(prefix)/var
-pkgstatedir := $(localstatedir)/lib/napkin
+prefix = /usr
+sysconfdir = $(prefix)/etc
+pkgconfdir = $(sysconfdir)/napkin
+sbindir = $(prefix)/sbin
+localstatedir = $(prefix)/var
+pkgstatedir = $(localstatedir)/lib/napkin
 pythondir := $(shell $(PYTHON) -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
-initddir := $(sysconfdir)/init.d
+initddir = $(sysconfdir)/init.d
 
 all:
 

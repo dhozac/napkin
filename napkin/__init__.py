@@ -103,7 +103,7 @@ class manifest:
         self.wlock = threading.RLock()
         self.rlock = threading.RLock()
         self.has_wlock = False
-        self.mtime = None
+        self.mtime = {}
 
     def add(self, obj):
         k = resource_ref(obj)
@@ -274,9 +274,18 @@ class manifest:
         self.clear_monitor()
         self.monitors = []
 
-    def read(self, filename, reqprov=None, hostname=None):
-        st = os.stat(filename)
-        if self.mtime is not None and self.mtime < st.st_mtime:
+    def read(self, filenames, reqprov=None, hostname=None):
+        skip = True
+        if not isinstance(filenames, (list, tuple)):
+            filenames = [filenames]
+        for filename in filenames:
+            if not os.path.exists(filename):
+                continue
+            st = os.stat(filename)
+            if filename not in self.mtime or self.mtime[filename] < st.st_mtime:
+                skip = False
+                self.mtime[filename] = st.st_mtime
+        if skip:
             return
         import napkin.providers
         napkin.providers.load(reqprov)
@@ -290,8 +299,9 @@ class manifest:
             if i.startswith("t_") or i.startswith("m_") or i.startswith("f_"):
                 d[i] = getattr(napkin.providers, i)
         threadlocals.manifest = self
-        helpers.execfile(filename, d, d)
-        self.mtime = st.st_mtime
+        for filename in filenames:
+            if os.path.exists(filename):
+                helpers.execfile(filename, d, d)
         self.unlock()
 
     def get_rlock(self):

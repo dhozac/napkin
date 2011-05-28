@@ -77,15 +77,14 @@ def create_manifest(hostname, rfp, wfp, resp):
                 "a.aid = p.aid AND a.hostname = '%s'" % hostname)
     for i in cur:
         providers.append(i[0])
-    for path in (os.path.join(config['manifestdir'], 'common'),
-                 os.path.join(config['manifestdir'], hostname)):
-        if os.path.exists(path):
-            manifests[hostname].read(path, providers, hostname)
+    manifests[hostname].read([os.path.join(config['manifestdir'], 'common'),
+                              os.path.join(config['manifestdir'], hostname)],
+                             providers, hostname)
     r = repr(manifests[hostname]).encode("utf-8")
     resp.send_response(200)
     resp.send_header("Content-Type", "application/x-napkin-manifest")
     resp.send_header("Content-Length", "%d" % len(r))
-    resp.send_header("Last-Modified", time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(manifests[hostname].mtime)))
+    resp.send_header("Last-Modified", time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(max(manifests[hostname].mtime.values()))))
     resp.end_headers()
     wfp.write(r)
 
