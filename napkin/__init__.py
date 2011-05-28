@@ -435,8 +435,12 @@ class resource:
         return True
     def __str__(self):
         ret = self.__class__.__name__ + "("
-        for i in (self.metaproperties, self.properties):
+        done = []
+        for i in (self.properties, self.metaproperties):
             for j in i:
+                if j in done:
+                    continue
+                done.append(j)
                 prop = i[j]
                 if hasattr(self, j):
                     v = getattr(self, j)
