@@ -93,7 +93,7 @@ def send_file(hostname, path, rfp, wfp, resp):
         resp.send_error(400, "No common name found in certificate!\r\n")
         return
     filename = None
-    name = path[path.index('/files/') + 6:]
+    name = path[path.index('/files/') + 7:]
     for p in (os.path.join(config['filesdir'], hostname), config['filesdir']):
         f = os.path.join(p, name)
         if os.path.exists(f):
