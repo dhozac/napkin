@@ -68,22 +68,22 @@ if options.sign:
             else:
                 serial = serial[0] + 2
             napkin.helpers.replace_file(os.path.join(config['confdir'], "agent-template.ct"),
-                                        tmpname, {"@HOSTNAME@": hostname, "@SERIAL@": serial[0]})
+                                        tmpname, {"@HOSTNAME@": hostname, "@SERIAL@": str(serial)})
             cmd = ["certtool", "--generate-certificate",
                    "--outfile", crt, "--load-request", csr,
                    "--load-ca-certificate", config['cacert'],
                    "--load-ca-privkey", config['cakey'], "--template",
-                   os.path.join(config['confdir'], "agent-template.ct")]
+                   tmpname]
             ret = subprocess.call(cmd)
             if ret == 0:
                 logger.info("signed %s", hostname)
                 os.unlink(csr)
         except:
+            logger.error("failed to generate certificate for %s: %s", hostname, sys.exc_info()[1])
             try:
                 os.unlink(crt)
             except:
                 pass
-            logger.error("failed to generate certificate for %s: %s", hostname, sys.exc_info()[1])
     os.unlink(tmpname)
     napkin.db.close()
 elif options.create:
