@@ -59,10 +59,10 @@ expiration_days = 3650
 #ca
 
 # Whether this certificate will be used for a TLS client
-#tls_www_client
+tls_www_client
 
 # Whether this certificate will be used for a TLS server
-#tls_www_server
+tls_www_server
 
 # Whether this certificate will be used to sign data (needed
 # in TLS DHE ciphersuites).
