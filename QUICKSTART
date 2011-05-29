@@ -2,7 +2,7 @@
     simplejson (if you're on an older Python), and GNU TLS.
 
  2. Install napkin with
-    make install
+    python setup.py install
 
  3. Create a CA with
     napkin-ca --create
