@@ -32,7 +32,7 @@ import napkin
 import napkin.helpers
 import napkin.api
 
-parser = optparse.OptionParser(version="0.1")
+parser = optparse.OptionParser(version=napkin.version.__version__)
 parser.add_option("-d", "--daemonize", action="store_true", dest="daemonize")
 parser.add_option("-D", "--confdir", action="store", dest="confdir", default="/etc/napkin")
 parser.add_option("-C", "--config", action="store", dest="conffile", default="/etc/napkin/napkind.conf")
@@ -232,7 +232,7 @@ if manifest.get_delay() is not None:
     monitor.start()
 
 class AgentRequestHandler(napkin.api.BaseHTTPRequestHandler):
-    server_version = "napkin/0.1"
+    server_version = "napkin/%s" % napkin.version.__version__
     protocol_version = "HTTP/1.0"
     def do_GET(self):
         try:

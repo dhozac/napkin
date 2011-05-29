@@ -23,6 +23,7 @@ import optparse
 import subprocess
 import tempfile
 import socket
+import napkin.version
 import napkin.db
 import napkin.helpers
 
@@ -41,7 +42,7 @@ logger = logging.getLogger("napkin.ca")
 stderr_handler = logging.StreamHandler(sys.stderr)
 logger.addHandler(stderr_handler)
 
-parser = optparse.OptionParser(version="0.1")
+parser = optparse.OptionParser(version=napkin.version.__version__)
 parser.add_option("-s", "--sign", action="store_true", dest="sign")
 parser.add_option("-c", "--create", action="store_true", dest="create")
 parser.add_option("-m", "--create-master", action="store_true", dest="master")

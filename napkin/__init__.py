@@ -22,6 +22,7 @@ import time
 import logging
 import threading
 import napkin.helpers as helpers
+import napkin.version as version
 
 if not hasattr(logging, 'NullHandler'):
     class NullHandler(logging.Handler):

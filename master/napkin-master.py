@@ -230,7 +230,7 @@ else:
         napkin.helpers.daemonize(config['logfile'], config['pidfile'])
     class MasterRequestHandler(napkin.api.BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.0"
-        server_version = "napkin/0.1"
+        server_version = "napkin/%s" % napkin.version.__version__
         def send_error(self, status=400, msg=None):
             if msg:
                 msg = msg.encode("utf-8")
