@@ -54,13 +54,11 @@ Configures a napkin node.
 
 %install
 rm -rf "%{buildroot}"
-make install DESTDIR="%{buildroot}" \
-	PYTHON="%{__python}" \
-	prefix="%{_prefix}" \
-	sbindir="%{_sbindir}" \
-	initddir="%{_initrddir}" \
-	pythondir="%{python_sitelib}" \
-	sysconfdir="%{_sysconfdir}"
+%{__python} setup.py install --destdir="%{buildroot}" \
+	--prefix="%{_prefix}" \
+	--sbindir="%{_sbindir}" \
+	--initddir="%{_initrddir}" \
+	--sysconfdir="%{_sysconfdir}"
 
 
 %clean
