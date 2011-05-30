@@ -42,6 +42,8 @@ def mkdir_p(name, mode='755'):
 def j(*args):
     r = ""
     for i in args:
+        if len(i) == 0:
+            continue
         if i[0] != os.path.sep:
             r += os.path.sep
         r += i
