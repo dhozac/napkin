@@ -52,7 +52,7 @@ def j(*args):
 def install(files, dest, replacements=None, keep=False, mode=None, dbn=None):
     if not replacements:
         replacements = {}
-    replacements['#![[:space:]]*[^[:space:]]+python[0-9.]*'] = "#!%s" % sys.executable
+    replacements['^#!\s*\S+python[0-9.]*'] = "#!%s" % sys.executable
     reps = {}
     for i in replacements:
         r = re.compile(i)
