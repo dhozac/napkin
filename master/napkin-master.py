@@ -147,7 +147,7 @@ def register(hostname, rfp, wfp, resp):
     if row is None:
         cur.execute("INSERT INTO agents (aid, hostname, last_report) VALUES (NULL, '%s', %d)" % (hostname, time.time()))
         napkin.db.commit()
-        # FIXME
+        # FIXME: get it from previous statement
         cur.execute("SELECT aid FROM agents WHERE hostname = '%s'" % registration['hostname'])
         row = cur.fetchone()
     else:
@@ -166,6 +166,7 @@ def get_certificate(hostname, rfp, wfp, resp, qs):
     if not qs.startswith("hostname="):
         resp.send_error(400, "Invalid query string specified: %s\r\n" % qs)
         logger.debug("invalid query string: %s", qs)
+        return
     hostname = qs[9:]
     filename = os.path.join(config['csrdir'], hostname + ".crt")
     if os.path.exists(filename):
