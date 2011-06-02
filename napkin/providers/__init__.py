@@ -25,6 +25,9 @@ def load(reqprov=None):
     if providers:
         return
     if reqprov is None:
+        import napkin.providers.filters
+        providers.append('filters')
+
         if os.name == 'posix':
             import napkin.providers.posix
             providers.append('posix')

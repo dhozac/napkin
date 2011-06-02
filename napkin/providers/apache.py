@@ -16,25 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from napkin.providers.filters import f_base
 import re
-
-class f_base:
-    def __init__(self):
-        pass
-    def __str__(self):
-        return self.__repr__()
-    def __repr__(self):
-        ret = self.__class__.__name__ + "("
-        ret += repr(self.kwargs)
-        ret += ")"
-        return ret
 
 class f_apache(f_base):
     def __init__(self, *args, **kwargs):
-        if len(args) > 0 and isinstance(args[0], dict):
-            self.kwargs = args[0]
-        else:
-            self.kwargs = kwargs
+        f_base.__init__(self, *args, **kwargs)
         self.section = []
     def __call__(self, stream, string, obj):
         stream.write(self.parse(str(string)).encode(obj.encoding))
