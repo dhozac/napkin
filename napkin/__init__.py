@@ -289,16 +289,14 @@ class manifest:
         if skip:
             return
         import napkin.providers
-        napkin.providers.load(reqprov)
+        types = napkin.providers.load(reqprov)
         self.get_wlock()
         self.clear()
         if hostname is None:
             import socket
             hostname = socket.gethostname()
         d = {'providers': reqprov, 'hostname': hostname}
-        for i in dir(napkin.providers):
-            if i.startswith("t_") or i.startswith("m_") or i.startswith("f_"):
-                d[i] = getattr(napkin.providers, i)
+        d.update(types)
         threadlocals.manifest = self
         for filename in filenames:
             if os.path.exists(filename):

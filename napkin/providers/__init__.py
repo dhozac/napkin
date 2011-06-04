@@ -22,31 +22,34 @@ import sys
 providers = []
 
 def load(reqprov=None):
-    if providers:
-        return
     if reqprov is None:
-        import napkin.providers.filters
-        providers.append('filters')
+        if not providers:
+            import napkin.providers.filters
+            providers.append('filters')
 
-        if os.name == 'posix':
-            import napkin.providers.posix
-            providers.append('posix')
+            if os.name == 'posix':
+                import napkin.providers.posix
+                providers.append('posix')
 
-        if os.uname()[0] == 'Linux':
-            import napkin.providers.linux
-            providers.append('linux')
+            if os.uname()[0] == 'Linux':
+                import napkin.providers.linux
+                providers.append('linux')
 
-        if (os.path.exists("/etc/fedora-release") or
-            os.path.exists("/etc/redhat-release") or
-            os.path.exists("/etc/centos-release")):
-            import napkin.providers.redhat
-            providers.append('redhat')
+            if (os.path.exists("/etc/fedora-release") or
+                os.path.exists("/etc/redhat-release") or
+                os.path.exists("/etc/centos-release")):
+                import napkin.providers.redhat
+                providers.append('redhat')
+
+        reqprov = providers
     else:
         for i in reqprov:
             m = __import__("napkin.providers.%s" % i, globals(), locals(), [], -1)
-            providers.append(i)
 
-    for i in providers:
+    ret = {}
+    for i in reqprov:
         m = sys.modules["napkin.providers.%s" % i]
         for j in dir(m):
-            globals()[j] = getattr(m, j)
+            if j.startswith("t_") or j.startswith("m_") or j.startswith("f_"):
+                ret[j] = getattr(m, j)
+    return ret
