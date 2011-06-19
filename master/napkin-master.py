@@ -40,6 +40,21 @@ del log_handler
 logger = logging.getLogger("napkin.master")
 
 napkin.db.connect(config)
+manifests = {}
+
+def get_manifest(hostname):
+    if hostname not in manifests:
+        manifests[hostname] = napkin.manifest()
+    providers = []
+    cur = napkin.db.cursor()
+    cur.execute("SELECT p.provider FROM providers AS p, agents AS a WHERE " +
+                "a.aid = p.aid AND a.hostname = '%s'" % hostname)
+    for i in cur:
+        providers.append(i[0])
+    manifests[hostname].read([os.path.join(config['manifestdir'], 'common'),
+                              os.path.join(config['manifestdir'], hostname)],
+                             providers, hostname)
+    return manifests[hostname]
 
 def process_report(hostname, rfp, wfp, resp):
     if hostname is None:
@@ -53,10 +68,24 @@ def process_report(hostname, rfp, wfp, resp):
     data = ""
     while length > 0:
         ret = rfp.read(length)
+        if not ret:
+            logger.error("%s terminated report prematurely", hostname)
+            return
         length -= len(ret)
         data += ret.decode("utf-8")
     report = napkin.api.deserialize(data)
-    logger.debug("%s: %s", hostname, report)
+
+    # Process alerts
+    if len(report[1]):
+        pass
+    # Process monitor data
+    manifest = get_manifest(hostname)
+    for i in report[0]:
+        cname = i[0]
+        oname = i[1]
+        val = report[0][i]
+        # FIXME: Do something here
+
     cur = napkin.db.cursor()
     cur.execute("UPDATE agents SET last_report = %d WHERE hostname = '%s'" % (time.time(), hostname))
     resp.send_response(200)
@@ -64,27 +93,16 @@ def process_report(hostname, rfp, wfp, resp):
     resp.end_headers()
     wfp.write("1\r\n".encode("utf-8"))
 
-manifests = {}
 def create_manifest(hostname, rfp, wfp, resp):
     if hostname is None:
         resp.send_error(400, "No common name found in certificate!\r\n")
         return
-    if hostname not in manifests:
-        manifests[hostname] = napkin.manifest()
-    providers = []
-    cur = napkin.db.cursor()
-    cur.execute("SELECT p.provider FROM providers AS p, agents AS a WHERE " +
-                "a.aid = p.aid AND a.hostname = '%s'" % hostname)
-    for i in cur:
-        providers.append(i[0])
-    manifests[hostname].read([os.path.join(config['manifestdir'], 'common'),
-                              os.path.join(config['manifestdir'], hostname)],
-                             providers, hostname)
-    r = repr(manifests[hostname]).encode("utf-8")
+    manifest = get_manifest(hostname)
+    r = repr(manifest).encode("utf-8")
     resp.send_response(200)
     resp.send_header("Content-Type", "application/x-napkin-manifest")
     resp.send_header("Content-Length", "%d" % len(r))
-    resp.send_header("Last-Modified", time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(max(manifests[hostname].mtime.values()))))
+    resp.send_header("Last-Modified", time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(max(manifest.mtime.values()))))
     resp.end_headers()
     wfp.write(r)
 
@@ -102,6 +120,7 @@ def send_file(hostname, path, rfp, wfp, resp):
     if filename is None or not os.path.isfile(filename):
         resp.send_error(404, "No such file could be found!\r\n")
         return
+    # FIXME: should ensure that the file is not someone else's
     st = os.stat(filename)
     resp.send_response(200)
     resp.send_header("Content-Length", "%d" % (st.st_size))
