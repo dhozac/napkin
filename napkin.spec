@@ -8,7 +8,7 @@
 %endif
 
 Name:		napkin
-Version:	0.1
+Version:	0.1.2
 Release:	1%{?dist}
 Summary:	Configuration management and monitoring system
 
